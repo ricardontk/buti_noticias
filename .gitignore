@@ -1,0 +1,24 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Sessão do WhatsApp (NÃO compartilhar)
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Dados de execução (ficam no volume /share do add-on)
+state.json
+lid_cache.json
+*.log
+
+# Ambiente
+.env
+.env.example.local
+
+# Skills do agente (não fazem parte do app)
+.agents/
+skills-lock.json
+
+# Sistema
+.DS_Store
+Thumbs.db

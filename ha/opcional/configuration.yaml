@@ -1,0 +1,56 @@
+# =============================================================================
+# Bot de Notícias — fragmento para o configuration.yaml do Home Assistant
+# =============================================================================
+# Onde cola: configuração do HA (File editor app em HAOS / SSH no Container).
+#
+# IMPORTANTE: `rest_command` e `rest` são integrações YAML-only.
+#   1. Faça backup da configuração antes de editar (Settings > System > Backups).
+#   2. Depois de salvar, valide: Developer Tools > YAML > "Check configuration".
+#   3. Aplique: reinicie o Home Assistant (o `rest_command` só é lido no boot).
+#
+# Endereço do bot: o bot roda como App (add-on) do HA OS, slug = bot_noticias.
+#   - HA (core) -> bot : http://bot_noticias:8090   (nome interno, sem IP fixo)
+#   - celular -> bot   : http://IP_DO_RASPBERRY:8090 (a porta 8090 já é publicada
+#                        no host pelo `ports: 8090/tcp: 8090` do app)
+#   Se `bot_noticias` não resolver, troque pelo IP do Raspberry.
+# =============================================================================
+
+rest_command:
+  # Dispara a varredura normal (equivalente ao botão "Buscar notícias agora").
+  noticias_buscar:
+    url: "http://bot_noticias:8090/api/buscar"
+    method: post
+    timeout: 15
+
+  # Dispara a varredura priorizando popularidade (botão "Mais lidas").
+  noticias_mais_lidas:
+    url: "http://bot_noticias:8090/api/mais-lidas"
+    method: post
+    timeout: 15
+
+
+rest:
+  # Um único GET em /api/status alimenta os dois sensores abaixo.
+  - resource: "http://bot_noticias:8090/api/status"
+    scan_interval: 60
+    timeout: 15
+    sensor:
+      # Quantas notícias estão esperando a sua aprovação (a fila do bot).
+      - name: "Bot Notícias - Pendentes"
+        unique_id: bot_noticias_pendentes
+        value_template: "{{ value_json.fila | int(0) }}"
+        icon: "mdi:newspaper-variant"
+        json_attributes_path: "$"
+        json_attributes:
+          - pronto
+          - canal_id
+          - ia
+          - ultima_varredura
+          - ultima_publicacao
+          - stats
+
+      # Qual modelo de IA está respondendo agora (Groq / Ollama / Assist do HA).
+      - name: "Bot Notícias - Modelo IA"
+        unique_id: bot_noticias_modelo_ia
+        value_template: "{{ value_json.ia.modelo }}"
+        icon: "mdi:brain"

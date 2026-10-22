@@ -1,0 +1,19 @@
+alias: Bot - Buscar por popularidade
+description: Dispara a varredura priorizando popularidade no bot de notícias de drones.
+mode: single
+sequence:
+  - action: rest_command.noticias_mais_lidas
+    response_variable: resposta
+  - if:
+      - condition: template
+        value_template: "{{ resposta['status'] != 200 }}"
+    then:
+      - action: persistent_notification.create
+        data:
+          title: "Bot de notícias"
+          message: >-
+            Não consegui falar com o bot (HTTP {{ resposta['status'] }}).
+            Confira se o bot está rodando e se o token está certo.
+      - stop: "Bot não respondeu"
+  - delay: "00:00:20"
+  - action: rest.reload

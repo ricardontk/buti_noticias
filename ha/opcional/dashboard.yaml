@@ -1,0 +1,71 @@
+# =============================================================================
+# Bot de Notícias — view de dashboard (Lovelace)
+# =============================================================================
+# Onde cola: no editor de dashboards, criar uma view nova > ⋮ > "Edit in YAML"
+#             (ou o pencil de um dashboard YAML) > colar > Save.
+#
+#VERSÃO DO HA:
+#   - 2026.5+ : card `shortcut` com `tap_action: {action: perform-action}`
+#   - antes   : card `button` com `tap_action: {action: call-service}`
+#                (substitua os dois cards `shortcut` abaixo por `button`).
+# =============================================================================
+
+type: masonry
+title: Notícias
+path: noticias
+icon: mdi:newspaper-variant
+
+cards:
+  # ------------------------------------------------ botões de ação
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: shortcut
+        label: Buscar notícias
+        description: Varredura normal
+        icon: mdi:radar
+        color: teal
+        tap_action:
+          action: perform-action
+          perform_action: script.bot_buscar_noticias
+
+      - type: shortcut
+        label: Mais lidas
+        description: Prioriza popularidade
+        icon: mdi:fire
+        color: orange
+        tap_action:
+          action: perform-action
+          perform_action: script.bot_buscar_por_popularidade
+
+  # ------------------------------------------------ status do bot
+  - type: entities
+    title: Status do bot
+    icon: mdi:robot-outline
+    show_header_toggle: false
+    entities:
+      - entity: sensor.bot_noticias_pendentes
+        name: Aguardando aprovação
+      - entity: sensor.bot_noticias_modelo_ia
+        name: Modelo de IA
+      - type: attribute
+        entity: sensor.bot_noticias_pendentes
+        attribute: ultima_varredura
+        name: Última varredura
+      - type: attribute
+        entity: sensor.bot_noticias_pendentes
+        attribute: ultima_publicacao
+        name: Última publicação
+
+  # ------------------------------------------------ atalho para o painel do bot
+  # Aqui o endereço é aberto pelo SEU CELULAR, então precisa do IP do Raspberry
+  # (o nome interno `bot_noticias` só funciona dentro do HA).
+  - type: shortcut
+    label: Abrir painel do bot
+    description: Aprovar e enviar pelo navegador
+    icon: mdi:open-in-new
+    color: primary
+    tap_action:
+      action: url
+      url_path: "http://IP_DO_RASPBERRY:8090"

@@ -1,0 +1,45 @@
+name: "Bot de Notícias - Drones de Pulverização"
+version: "1.1.0"
+slug: "bot_noticias"
+description: "Coleta notícias de drones de pulverização (Brasil e mundo), traduz e reescreve no tom do canal, e publica no canal do WhatsApp depois da sua aprovação."
+startup: application
+boot: auto
+init: false
+arch:
+  - aarch64
+
+# O painel do bot aparece dentro do Home Assistant (sem digitar IP nenhum).
+ingress: true
+ingress_port: 8090
+ingress_panel: true
+
+options:
+  canal_id: ""
+  meu_numero: ""
+  llm_provedor: "groq"
+  groq_api_key: ""
+  groq_modelo: "qwen/qwen3.8-27b"
+  resumo_diario_hora: "07:00"
+  max_noticias: 5
+  painel_token: ""
+  notificar_ha: "true"
+  dispositivo_notificacao: ""
+  publicar_estado_ha: "true"
+schema:
+  canal_id: str?
+  meu_numero: str?
+  llm_provedor: "groq|ha_assist|ollama|heuristica"
+  groq_api_key: str?
+  groq_modelo: str?
+  resumo_diario_hora: str?
+  max_noticias: int(1,20)?
+  painel_token: password?
+  notificar_ha: bool?
+  dispositivo_notificacao: str?
+  publicar_estado_ha: bool?
+ports:
+  8090/tcp: 8090
+map:
+  - share:rw
+  - homeassistant_config:rw
+homeassistant: true

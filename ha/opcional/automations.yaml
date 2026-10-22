@@ -1,0 +1,26 @@
+# =============================================================================
+# Bot de Notícias — automação (Home Assistant)
+# =============================================================================
+# Onde cola: Settings > Automations & Scenes > Automations > [+ Create automation]
+#             > editar > "Edit in YAML" (⋮) > colar > Save.
+#
+# Objetivo: avisar no celular quando a fila de aprovação do bot ganha itens.
+# Dispara só na travessia de 0 -> >0 (numeric_state), com 30s de folga para
+# não piscar enquanto o bot monta o lote.
+# =============================================================================
+
+alias: Bot de notícias - avisar fila de aprovação
+description: Avisa quando há notícias de drones aguardando sua aprovação.
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.bot_noticias_pendentes
+    above: 0
+    for: "00:00:30"
+actions:
+  - action: notify.mobile_app_SEU_CELULAR
+    data:
+      title: "Aguardando sua aprovação"
+      message: >-
+        {{ states('sensor.bot_noticias_pendentes') | int(0) }} notícia(s) de drones
+        de pulverização esperando você no WhatsApp.
+mode: single

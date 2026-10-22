@@ -1,0 +1,154 @@
+{
+  "_comentario": "Fontes de notícias. 'tipo' google_news = agregador (usa query), 'rss' = feed direto. O 'when:7d' do Google News garante só notícias dos últimos 7 dias. Tudo validado em 21/10/2026.",
+
+  "fontes": [
+    {
+      "id": "gn-br-pulverizacao",
+      "nome": "Google News BR — pulverização com drone",
+      "tipo": "google_news",
+      "regiao": "BR",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=drone+pulveriza%C3%A7%C3%A3o+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    },
+    {
+      "id": "gn-br-agro",
+      "nome": "Google News BR — drone no agro",
+      "tipo": "google_news",
+      "regiao": "BR",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=drone+agro+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    },
+    {
+      "id": "gn-br-agricultura",
+      "nome": "Google News BR — drone na agricultura",
+      "tipo": "google_news",
+      "regiao": "BR",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=drone+agricultura+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    },
+    {
+      "id": "gn-br-aerea",
+      "nome": "Google News BR — pulverização aérea",
+      "tipo": "google_news",
+      "regiao": "BR",
+      "peso": 0.9,
+      "url": "https://news.google.com/rss/search?q=pulveriza%C3%A7%C3%A3o+a%C3%A9rea+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    },
+    {
+      "id": "gn-br-aplicacao",
+      "nome": "Google News BR — aplicação com drone",
+      "tipo": "google_news",
+      "regiao": "BR",
+      "peso": 0.9,
+      "url": "https://news.google.com/rss/search?q=drone+aplica%C3%A7%C3%A3o+agro+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    },
+    {
+      "id": "gn-br-produtos",
+      "nome": "Google News BR — XAG e DJI no Brasil",
+      "tipo": "google_news",
+      "regiao": "BR",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=XAG+OR+%22DJI+Agras%22+drone+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    },
+    {
+      "id": "gn-br-regulacao",
+      "nome": "Google News BR — regulação de drones no agro",
+      "tipo": "google_news",
+      "regiao": "BR",
+      "peso": 0.9,
+      "url": "https://news.google.com/rss/search?q=drone+regulamenta%C3%A7%C3%A3o+OR+MAPA+OR+ANAC+OR+ANATEL+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    },
+    {
+      "id": "gn-mundo-spray",
+      "nome": "Google News — spray drone",
+      "tipo": "google_news",
+      "regiao": "MUNDO",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=%22spray+drone%22+when:7d&hl=en-US&gl=US&ceid=US:en"
+    },
+    {
+      "id": "gn-mundo-agri",
+      "nome": "Google News — agricultural drone",
+      "tipo": "google_news",
+      "regiao": "MUNDO",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=%22agricultural+drone%22+when:7d&hl=en-US&gl=US&ceid=US:en"
+    },
+    {
+      "id": "gn-mundo-crop",
+      "nome": "Google News — drone crop protection",
+      "tipo": "google_news",
+      "regiao": "MUNDO",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=drone+%22crop+protection%22+when:7d&hl=en-US&gl=US&ceid=US:en"
+    },
+    {
+      "id": "gn-mundo-uav",
+      "nome": "Google News — UAV spraying agriculture",
+      "tipo": "google_news",
+      "regiao": "MUNDO",
+      "peso": 0.9,
+      "url": "https://news.google.com/rss/search?q=UAV+spraying+agriculture+when:7d&hl=en-US&gl=US&ceid=US:en"
+    },
+    {
+      "id": "gn-mundo-produtos",
+      "nome": "Google News — XAG / DJI Agras no mundo",
+      "tipo": "google_news",
+      "regiao": "MUNDO",
+      "peso": 1.0,
+      "url": "https://news.google.com/rss/search?q=%22DJI+Agras%22+OR+%22XAG%22+drone+when:7d&hl=en-US&gl=US&ceid=US:en"
+    },
+    {
+      "id": "agfundernews",
+      "nome": "AgFunder News",
+      "tipo": "rss",
+      "regiao": "MUNDO",
+      "peso": 1.0,
+      "url": "https://www.agfundernews.com/feed/"
+    },
+    {
+      "id": "prnewswire",
+      "nome": "PR Newswire",
+      "tipo": "rss",
+      "regiao": "MUNDO",
+      "peso": 0.6,
+      "url": "https://www.prnewswire.com/rss/news-releases-list.rss"
+    },
+    {
+      "id": "aviationweek",
+      "nome": "Aviation Week",
+      "tipo": "rss",
+      "regiao": "MUNDO",
+      "peso": 0.6,
+      "url": "https://www.aviationweek.com/rss.xml"
+    }
+  ],
+
+  "tendencias": [
+    { "id": "trends-br", "nome": "Google Trends BR", "url": "https://trends.google.com/trending/rss?geo=BR" },
+    { "id": "trends-us", "nome": "Google Trends US", "url": "https://trends.google.com/trending/rss?geo=US" }
+  ],
+
+  "palavras_chave": {
+    "fortes": [
+      "drone de pulverização", "drone pulverização", "spray drone", "spraying drone",
+      "pulverização aérea", "drone agrícola", "agricultural drone", "uav agrícola",
+      "pulverizador aéreo", "drone de aplicação", "crop spraying drone", "drone application",
+      "agras", "agricultural spraying", "pulverização com drone", "pulverização via drone"
+    ],
+    "contexto": [
+      "drone", "drones", "uav", "uavs", "pulverização", "pulverizar", "pulverizador", "agricultura",
+      "agro", "lavoura", "soja", "milho", "algodão", "cana", "café", "pastagem", "rebanho",
+      "agricultural", "spraying", "crop", "farm", "farmer", "tanker", "ag spray", "hectare",
+      "dji", "xag", "hyzone", "eav", "mapa", "anac", "anatel", "regulamentação", "certificação",
+      "aplicação", "aplicacao", "defensivo", "fungicida", "inseticida", "herbicida", "calda",
+      "cobertura", "deriva", "vento", "bico", "taxa de aplicação", "talhão", "talhão", "jato"
+    ],
+    "negativas": [
+      "drone de entrega", "drone de rasa", "drone de guerra", "drone militar", "morteiro",
+      "ataque", "guerra", "terrorista", "arma", "armação", "recreativo", "brincadeira",
+      "drone racing", "drone racing", "cine", "filme", "cinema", "viagem", "turismo",
+      "festival", "show", "esporte", "futebol", "smartphone", "câmera", "gopro"
+    ]
+  }
+}

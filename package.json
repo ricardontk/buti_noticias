@@ -1,0 +1,23 @@
+{
+  "name": "bot-noticias",
+  "version": "1.0.0",
+  "description": "Bot de noticias de drones de pulverizacao - coleta, aprova e publica em canal do WhatsApp",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "canais": "node scripts/listar_canais.js",
+    "resolver": "node scripts/listar_canais.js resolver"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "moment-timezone": "^0.6.0",
+    "node-cron": "^3.0.3",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "rss-parser": "^3.13.0",
+    "whatsapp-web.js": "https://github.com/lindionez/whatsapp-web.js/archive/refs/heads/main.tar.gz"
+  }
+}

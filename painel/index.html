@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>🚁 Drones de Pulverização</title>
+<style>
+  :root {
+    --verde: #1f9d55; --verde-esc: #157a40; --fundo: #0f1417; --card: #1b2225;
+    --texto: #e9edee; --cinza: #8fa3a8; --borda: #2a3438;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 18px 14px 40px; background: var(--fundo); color: var(--texto);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    max-width: 560px; margin-inline: auto;
+  }
+  header { text-align: center; margin-bottom: 18px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--cinza); font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--borda); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .btn {
+    display: block; width: 100%; padding: 16px; margin-bottom: 10px; border: 0; border-radius: 12px;
+    background: var(--verde); color: #fff; font-size: 17px; font-weight: 600; cursor: pointer;
+  }
+  .btn:active { background: var(--verde-esc); transform: scale(.99); }
+  .btn.sec { background: #223038; color: var(--texto); font-size: 15px; padding: 13px; }
+  .btn.sec:active { background: #2b3a43; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #232c30; }
+  .row:last-child { border-bottom: 0; }
+  .row b { font-weight: 600; }
+  .mut { color: var(--cinza); }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .6px; color: var(--cinza); margin: 0 0 10px; }
+  ul { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+  li { padding: 8px 0; border-bottom: 1px solid #232c30; }
+  li:last-child { border-bottom: 0; }
+  li a { color: #6fd3a0; text-decoration: none; word-break: break-all; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 20px; background: #23313a; color: #9fd6bb; margin-right: 6px; }
+  .tag.br { background: #1d3a2a; color: #7fe0a8; }
+  .tag.mundo { background: #2a2f45; color: #a9b4f0; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #0d1113;
+           border: 1px solid var(--borda); padding: 12px 18px; border-radius: 12px; font-size: 14px;
+           opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 90%; }
+  .toast.on { opacity: 1; }
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff55; border-top-color: #fff;
+          border-radius: 50%; animation: s .8s linear infinite; vertical-align: -2px; }
+  @keyframes s { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🚁 Drones de Pulverização</h1>
+    <div class="sub">Notícias do agro — Brasil &amp; mundo</div>
+  </header>
+
+  <div class="card">
+    <button class="btn" id="btnBuscar">🔍 Buscar notícias agora</button>
+    <button class="btn sec" id="btnMaisLidas">📈 Ver as mais lidas do dia</button>
+  </div>
+
+  <div class="card">
+    <h2>Status</h2>
+    <div class="row"><span class="mut">Bot</span><b id="stPronto">—</b></div>
+    <div class="row"><span class="mut">IA</span><b id="stIA">—</b></div>
+    <div class="row"><span class="mut">Última varredura</span><b id="stVarredura">—</b></div>
+    <div class="row"><span class="mut">Última publicação</span><b id="stPublicacao">—</b></div>
+    <div class="row"><span class="mut">Aguardando você</span><b id="stFila">—</b></div>
+    <div class="row"><span class="mut">Publicadas / puladas</span><b id="stStats">—</b></div>
+  </div>
+
+  <div class="card">
+    <h2>Modelos de texto (IA)</h2>
+    <div id="listaModelos" class="mut">Carregando…</div>
+    <button class="btn sec" id="btnModelos" style="margin-top:10px">🔄 Atualizar modelos</button>
+  </div>
+
+  <div class="card">
+    <h2>Últimas publicações</h2>
+    <ul id="listaUltimas"><li class="mut">Nada publicado ainda.</li></ul>
+  </div>
+
+  <div class="card">
+    <h2>Fontes</h2>
+    <ul id="listaFontes"><li class="mut">Carregando…</li></ul>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="/painel.js"></script>
+</body>
+</html>

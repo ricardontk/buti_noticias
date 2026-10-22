@@ -1,0 +1,49 @@
+{
+  "_comentario": "Configuração do Bot de Notícias. Preencha 'canal_id' (canal do WhatsApp onde as notícias serão publicadas) e 'meu_numero' (seu WhatsApp, que recebe os avisos). Este arquivo fica no volume /share/bot_noticias/ dentro do Home Assistant.",
+
+  "canal_id": "",
+  "canais_alternativos": {},
+  "meu_numero": "",
+  "admin_phone": "",
+
+  "destino_padrao": "canal",
+
+  "resumo_diario": {
+    "ativo": true,
+    "hora": "07:00",
+    "timezone": "America/Sao_Paulo",
+    "max_noticias": 5
+  },
+
+  "busca": {
+    "max_noticias_por_varredura": 8,
+    "max_noticias_por_dia": 10,
+    "max_idade_dias": 7,
+    "janela_horaria": { "inicio": "06:00", "fim": "21:00" },
+    "usar_mais_lidas": true,
+    "usar_tendencias_google": true
+  },
+
+  "llm": {
+    "provedor": "groq",
+    "groq_url": "https://api.groq.com/openai/v1",
+    "groq_api_key": "",
+    "groq_modelo": "qwen/qwen3.8-27b",
+    "ha_url": "http://supervisor/core/api/conversation/process",
+    "ha_token": "",
+    "agent_id": null,
+    "timeout_ms": 60000,
+    "fallback_heuristico": true
+  },
+
+  "publicacao": {
+    "incluir_imagem": true,
+    "rodape": "Fonte: {fonte} | {data}",
+    "prefixo": "🚁"
+  },
+
+  "painel": {
+    "porta": 8090,
+    "token": ""
+  }
+}
