@@ -77,6 +77,77 @@ def elemento(valor):
     )(valor)
 
 
+def validar_valor(tipo, valor):
+    """Confere o valor da opção contra o tipo declarado no schema.
+
+    É o mesmo check que o Supervisor faz: `list(a|b|c)` exige que o valor seja
+    um dos itens da lista, `int(1,20)` exige inteiro no intervalo, etc.
+    """
+    tipo = str(tipo).strip()
+    if tipo.endswith("?"):
+        tipo = tipo[:-1].strip()
+
+    if tipo.startswith("list(") and tipo.endswith(")"):
+        opcoes = [o.strip() for o in tipo[5:-1].split("|")]
+        if str(valor) not in opcoes:
+            return False, f"o valor precisa ser um destes: {', '.join(opcoes)}"
+        return True, ""
+
+    if tipo.startswith("match(") and tipo.endswith(")"):
+        padrao = tipo[6:-1]
+        if not re.match(padrao, str(valor)):
+            return False, f"o valor não casa com /{padrao}/"
+        return True, ""
+
+    if tipo == "bool":
+        if isinstance(valor, bool):
+            return True, ""
+        if str(valor).lower() in ("true", "false"):
+            return True, ""
+        return False, "o valor precisa ser verdadeiro ou falso"
+
+    if tipo == "port":
+        try:
+            porta = int(valor)
+        except (TypeError, ValueError):
+            return False, "o valor precisa ser um número de porta"
+        if not 1 <= porta <= 65535:
+            return False, "a porta precisa estar entre 1 e 65535"
+        return True, ""
+
+    if tipo.startswith("int(") and tipo.endswith(")"):
+        limites = tipo[4:-1].split(",")
+        minimo = int(limites[0]) if limites[0].strip() else None
+        maximo = int(limites[1]) if len(limites) > 1 and limites[1].strip() else None
+        if isinstance(valor, bool) or not isinstance(valor, (int, str)):
+            return False, "o valor precisa ser um número inteiro"
+        try:
+            numero = int(valor)
+        except (TypeError, ValueError):
+            return False, "o valor precisa ser um número inteiro"
+        if minimo is not None and numero < minimo:
+            return False, f"o valor precisa ser >= {minimo}"
+        if maximo is not None and numero > maximo:
+            return False, f"o valor precisa ser <= {maximo}"
+        return True, ""
+
+    if tipo.startswith("float(") and tipo.endswith(")"):
+        try:
+            float(valor)
+        except (TypeError, ValueError):
+            return False, "o valor precisa ser um número"
+        return True, ""
+
+    if tipo in ("str", "password", "email", "url"):
+        if not isinstance(valor, str):
+            return False, "o valor precisa ser texto"
+        if tipo == "email" and "@" not in valor:
+            return False, "o valor precisa ser um e-mail"
+        return True, ""
+
+    return True, ""
+
+
 SCHEMA = vol.Schema(
     {
         vol.Required("name"): str,
@@ -135,10 +206,34 @@ def main():
             else:
                 print(f"  ok    {chave}   (erro em '{onde}': {erro.msg})")
 
+    # --- valores das opções contra o schema (o mesmo check do Supervisor) ---
+    print("\n  valores das opções:")
+    opcoes = bruto.get("options") or {}
+    tipos = bruto.get("schema") or {}
+    for chave, valor in opcoes.items():
+        if chave not in tipos:
+            erros += 1
+            print(f"  ERRO  {chave}: não tem entrada no schema")
+            continue
+        ok, motivo = validar_valor(tipos[chave], valor)
+        if ok:
+            print(f"  ok    {chave} = {valor!r}  (schema: {tipos[chave]})")
+        else:
+            erros += 1
+            print(f"  ERRO  {chave} = {valor!r}  (schema: {tipos[chave]}) — {motivo}")
+
+    # opções declaradas no schema mas ausentes em options
+    for chave in tipos:
+        if chave not in opcoes:
+            print(f"  --    {chave}: no schema, mas sem valor padrão em options")
+
     print()
     try:
         SCHEMA(bruto)
-        print("RESULTADO: config.yaml valido.")
+        if erros:
+            print(f"RESULTADO: config.yaml tem {erros} problema(s) — veja acima.")
+        else:
+            print("RESULTADO: config.yaml valido.")
     except vol.Invalid as erro:
         erros += 1
         print(f"RESULTADO: config.yaml INVALIDO -> {erro.msg}")

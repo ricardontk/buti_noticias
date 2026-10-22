@@ -18,7 +18,7 @@ panel_admin: true
 options:
   canal_id: ""
   canais: ""
-  modo_publicacao: "list(reserva|todos)"
+  modo_publicacao: "reserva"
   meu_numero: ""
   painel_porta: "8090"
   llm_provedor: "groq"
