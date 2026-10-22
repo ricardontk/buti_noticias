@@ -515,4 +515,28 @@ wa.iniciar();
     setInterval(atualizarHA, 60000);
 })();
 
+// ------------------------------------------------------------- vigia ------
+// Se o WhatsApp ficar desconectado por muito tempo (aba caiu e não voltou),
+// o app sai com erro: o Supervisor reinicia ele limpo, resolvendo estados
+// travados sem depender de você.
+const VIGIA_MS = 15 * 60 * 1000;
+let desconectadoDesde = null;
+setInterval(() => {
+    if (wa.conectado) {
+        desconectadoDesde = null;
+        return;
+    }
+    if (!desconectadoDesde) {
+        desconectadoDesde = Date.now();
+        console.warn("⚠️ WhatsApp desconectado — aguardando reconectar.");
+        return;
+    }
+    const fora = Date.now() - desconectadoDesde;
+    console.warn(`⚠️ WhatsApp segue desconectado há ${Math.round(fora / 60000)} min.`);
+    if (fora > VIGIA_MS) {
+        console.error("❌ Reconexão não aconteceu — reiniciando o app (o Supervisor faz o resto).");
+        process.exit(1);
+    }
+}, 60000);
+
 module.exports = { varredura };

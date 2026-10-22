@@ -78,6 +78,72 @@ const cfg = {
     checar("erro comum é propagado", erro?.message === "Chat não encontrado", erro?.message);
     checar("erro comum não reinicia a sessão", reiniciou === false);
 
+    // 3) freio: dois reinícios seguidos não podem acontecer (evita loop no RPi4)
+    const comFreio = new WhatsAppClient({ ...cfg, intervalo_reinicio_ms: 60000 });
+    let tentativas = 0;
+    comFreio.client = {
+        async sendMessage() {
+            tentativas += 1;
+            throw new Error("Cannot read properties of undefined (reading 'getChat')");
+        },
+    };
+    comFreio.reiniciar = async function () {
+        const agora = Date.now();
+        const desde = agora - (this.ultimoReinicio || 0);
+        if (desde < this.intervaloReinicioMs) {
+            throw new Error("reinício recente — não vou reiniciar de novo agora");
+        }
+        this.ultimoReinicio = agora;
+        this.client = {
+            async sendMessage() {
+                return "enviado";
+            },
+        };
+    };
+    await comFreio.enviarMensagem("5511999999999@c.us", "olá");
+    comFreio.client = {
+        async sendMessage() {
+            throw new Error("Cannot read properties of undefined (reading 'getChat')");
+        },
+    };
+    erro = null;
+    try {
+        await comFreio.enviarMensagem("5511999999999@c.us", "olá");
+    } catch (e) {
+        erro = e;
+    }
+    checar("segundo reinício é barrado pelo freio", !!erro, erro?.message?.slice(0, 50));
+
+    // 4) depois de N falhas: pede QR novo (descarta a sessão salva)
+    const semFreio = new WhatsAppClient({ ...cfg, intervalo_reinicio_ms: 0, max_falhas_injecao: 3 });
+    let forcado = false;
+    let reinicios = 0;
+    semFreio.client = {
+        async sendMessage() {
+            throw new Error("Cannot read properties of undefined (reading 'getChat')");
+        },
+    };
+    semFreio.reiniciar = async function (forcarQR) {
+        reinicios += 1;
+        if (forcarQR) {
+            forcado = true;
+            return;
+        }
+        this.client = {
+            async sendMessage() {
+                throw new Error("Cannot read properties of undefined (reading 'getChat')");
+            },
+        };
+    };
+    for (let i = 0; i < 3; i += 1) {
+        try {
+            await semFreio.enviarMensagem("5511999999999@c.us", "olá");
+        } catch (_) {
+            /* esperado */
+        }
+    }
+    checar("após 3 falhas pede QR novo", forcado === true, `${reinicios} reinício(s)`);
+
     console.log("\nTudo certo.");
     process.exit(0);
 })();

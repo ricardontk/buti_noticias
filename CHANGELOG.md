@@ -2,6 +2,27 @@
 
 Todas as mudanças relevantes deste app.
 
+### Corrigido
+
+- **A aba do WhatsApp Web "se desanexa"** (`Attempted to use detached Frame`):
+  é a causa real do erro de injeção — a página recarrega ou cai e a biblioteca
+  fica com a referência velha. Melhorias:
+  - a recuperação agora **espera a sessão ficar pronta** (evento `ready`) antes de
+    reenviar, em vez de só recarregar a página;
+  - o erro "detached Frame" também é reconhecido como falha de injeção;
+  - **freio anti-loop**: dois reinícios em menos de 1 minuto não são permitidos
+    (evita o bot ficar reiniciando e queimando CPU/RAM do RPi 4);
+  - o log dá a dica de que, se repetir muito, o problema pode ser memória.
+
+### Corrigido
+
+- **Vigia do app**: se o WhatsApp ficar desconectado por mais de 15 minutos
+  (aba caiu e não voltou), o app sai com erro — o Supervisor reinicia ele limpo
+  e o bot volta a funcionar sozinho, sem depender de você.
+- **Sessão quebrada sem saída**: depois de 3 falhas de injeção seguidas, o bot
+  **descarta a credencial salva e pede um QR Code novo** (o arquivo
+  `qrcode.png` é gerado de novo e aparece no painel para você escanear).
+
 ## 1.6.0
 
 ### Corrigido
