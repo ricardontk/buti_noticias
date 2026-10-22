@@ -30,6 +30,7 @@ options:
   canais: ""
   modo_publicacao: "reserva"
   meu_numero: ""
+  publicacao_gancho: "💬 Se você também aplica com drone, me conta aqui."
   llm_provedor: "groq"
   groq_api_key: ""
   groq_modelo: "qwen/qwen3.8-27b"
@@ -44,6 +45,7 @@ schema:
   canais: str?
   modo_publicacao: "list(reserva|todos)"
   meu_numero: str?
+  publicacao_gancho: str?
   llm_provedor: "list(groq|ha_assist|ollama|heuristica)"
   groq_api_key: str?
   groq_modelo: str?

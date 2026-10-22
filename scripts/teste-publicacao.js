@@ -78,6 +78,20 @@ async function principal() {
     pub = new Publisher(cli, { ...cfg, canal_id: "", canais: [] });
     r = await pub.publicar({ titulo: "t" }, "texto");
     checar("sem destino devolve erro", r.ok === false, r.erro);
+
+    // --- só a lista "canais", sem "canal_id" (configuração pelo app) ---
+    const soLista = { ...cfg, canal_id: "", canais: ["111@newsletter", "222@newsletter"] };
+    cli = clienteFalso();
+    pub = new Publisher(cli, soLista);
+    checar("só a lista canais vira destino", pub.destinos.length === 2, pub.destinos.join(","));
+    r = await pub.publicar({ titulo: "t" }, "texto");
+    checar("publica usando só a lista canais", r.ok === true && cli.enviados.length === 1, cli.enviados.map((e) => e.destino).join(","));
+
+    // --- lista como texto separado por vírgula (vem do app assim) ---
+    const comoTexto = { ...cfg, canal_id: "", canais: "111@newsletter, 222@newsletter" };
+    cli = clienteFalso();
+    pub = new Publisher(cli, comoTexto);
+    checar("lista por vírgula é entendida", pub.destinos.length === 2, pub.destinos.join(","));
 }
 
 principal().then(() => process.exit(0));

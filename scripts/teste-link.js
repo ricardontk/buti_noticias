@@ -40,6 +40,15 @@ checar("usa o link original do feed", linkFinal(itemQuebrado) === itemQuebrado.l
 const semOriginal = { titulo: "X", link: "chrome-error://chromewebdata/" };
 checar("sem original, não devolve chrome-error", !String(linkFinal(semOriginal)).startsWith("chrome-error://"));
 
+// 4) link de script/analytics não é publicável
+const analytics = {
+    titulo: "Y",
+    link: "https://www.google-analytics.com/analytics.js",
+    linkOriginal: "https://news.google.com/rss/articles/abc",
+};
+checar("analytics.js é descartado", !linkFinal(analytics).includes("analytics.js"), linkFinal(analytics));
+checar("usa o original quando o link é script", linkFinal(analytics) === analytics.linkOriginal, linkFinal(analytics));
+
 // 4) a mensagem publicada usa o mesmo link
 const cfg = { publicacao: { prefixo: "🚁", rodape: "Fonte: {fonte} | {data}" } };
 const texto = mensagemCanal(itemQuebrado, cfg);

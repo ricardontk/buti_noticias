@@ -10,6 +10,8 @@ function dataCurta(iso) {
     return moment(iso).tz(TZ).format("DD/MM/YYYY");
 }
 
+const { ehLinkPublicavel } = require("./artigo");
+
 /**
  * Link final: o resolvido (veículo real) quando for um link válido;
  * senão o link original do feed.
@@ -19,10 +21,9 @@ function dataCurta(iso) {
  */
 function linkFinal(item) {
     const resolvido = String(item.linkReal || item.link || "");
-    const valido = /^https?:\/\//i.test(resolvido) && !/^chrome-error:/i.test(resolvido);
-    if (valido) return resolvido;
+    if (ehLinkPublicavel(resolvido)) return resolvido;
     const original = String(item.linkOriginal || "");
-    if (/^https?:\/\//i.test(original)) return original;
+    if (ehLinkPublicavel(original)) return original;
     return ""; // nenhum link publicável
 }
 

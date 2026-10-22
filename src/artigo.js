@@ -46,6 +46,10 @@ function limparTags(html) {
     );
 }
 
+// Links que nunca são a matéria (scripts, analytics, social, etc.)
+const NAO_E_ARTIGO =
+    /google\.|gstatic\.|googleusercontent|google-analytics|googletagmanager|doubleclick|facebook|twitter|x\.com|linkedin|instagram|youtube|whatsapp|t\.me|telegram|reddit|bing\.com|amazon\.com|apple\.com|tiktok|\.js$|\.css$|\.png$|\.jpg$|\.svg$|\.ico$|\/img\/|\/images\//i;
+
 /**
  * Acha a URL original dentro do HTML do Google News.
  * @returns {string|null}
@@ -68,12 +72,15 @@ function extrairUrlGoogle(html) {
     const json = texto.match(/"url":"(https?:\/\/[^"\\]+)"/i);
     if (json) return decodir(json[1]);
 
-    // 3) último recurso: o primeiro link externo da página
+    // 3) último recurso: o primeiro link que parece matéria de verdade
+    //    (a página tem analytics.js, pixels de social, etc. antes dela)
     const links = [...texto.matchAll(/href="(https?:\/\/[^"]+)"/gi)].map((m) => decodir(m[1]));
     for (const link of links) {
-        if (!/google\.com|gstatic\.com|googleusercontent\.com|youtube\.com/i.test(link)) {
-            return link;
-        }
+        if (NAO_E_ARTIGO.test(link)) continue;
+        // quer um caminho com conteúdo (ex.: /agricultura/noticia/2026/10/x)
+        const caminho = link.replace(/^https?:\/\/[^/]+/, "");
+        if (caminho.split("/").filter(Boolean).length < 2) continue;
+        return link;
     }
     return null;
 }
@@ -136,6 +143,7 @@ class Artigo {
     /** Texto da matéria (vazio se não conseguir). */
     async texto(url) {
         if (!url || !/^https?:\/\//i.test(url)) return "";
+        if (NAO_E_ARTIGO.test(url)) return ""; // script, analytics, social
         try {
             const { html } = await this.baixar(url);
             return extrairTexto(html);
@@ -176,4 +184,16 @@ class Artigo {
     }
 }
 
-module.exports = { Artigo, extrairTexto, extrairUrlGoogle, limparTags };
+/** Link http(s) que dá para abrir (sem página de erro do Chromium). */
+function ehLinkHttp(link) {
+    const texto = String(link || "");
+    return /^https?:\/\//i.test(texto) && !/^chrome-error:/i.test(texto);
+}
+
+/** Link que dá para publicar como matéria (não é script, analytics ou social). */
+function ehLinkPublicavel(link) {
+    const texto = String(link || "");
+    return ehLinkHttp(texto) && !NAO_E_ARTIGO.test(texto);
+}
+
+module.exports = { Artigo, extrairTexto, extrairUrlGoogle, limparTags, ehLinkPublicavel, ehLinkHttp };

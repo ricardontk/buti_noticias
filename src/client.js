@@ -44,6 +44,7 @@ class WhatsAppClient {
             ],
         };
         if (cfg.chromium) puppeteerConfig.executablePath = cfg.chromium;
+        this.puppeteerConfig = puppeteerConfig;
 
         this.client = new Client({
             authStrategy: new LocalAuth({ dataPath: cfg.caminhos.auth }),
@@ -97,6 +98,7 @@ class WhatsAppClient {
 
     /** Registra os listeners. `handlers` = { onMessage(msg, numero), onReady() } */
     registrar(handlers) {
+        this.handlers = handlers || {};
         const c = this.client;
 
         c.on("qr", (qr) => {
@@ -156,6 +158,54 @@ class WhatsAppClient {
                 console.error("⚠️ erro no handler de mensagem:", err);
             }
         });
+    }
+
+    /**
+     * O whatsapp-web.js roda dentro da página do WhatsApp Web e usa
+     * `window.WWebJS.getChat(...)`. Quando o WhatsApp recarrega a página, o
+     * script injetado some e qualquer envio quebra com
+     * "Cannot read properties of undefined (reading 'getChat')".
+     *
+     * Nesses casos reiniciamos a sessão e tentamos de novo.
+     */
+    _ehErroDeInjecao(err) {
+        const msg = String(err?.message || err || "");
+        return /WWebJS|getChat|Cannot read properties of undefined/i.test(msg);
+    }
+
+    /** Recria o cliente do WhatsApp (mantém a sessão salva no volume). */
+    async reiniciar() {
+        console.log("🔄 Sessão do WhatsApp sem script injetado — reiniciando...");
+        try {
+            await this.client.destroy();
+        } catch (_) {}
+        this.client = new Client({
+            authStrategy: new LocalAuth({ dataPath: this.cfg.caminhos.auth }),
+            authTimeoutMs: 120000,
+            qrMaxRetries: 5,
+            syncFullHistory: false,
+            receivePendingNotifications: false,
+            puppeteer: this.puppeteerConfig,
+        });
+        this.registrar(this.handlers || {});
+        await this.client.initialize();
+        this.conectado = true;
+        console.log("✅ Sessão do WhatsApp reiniciada.");
+    }
+
+    /**
+     * Envia uma mensagem, se recovering de uma falha de injeção.
+     * @param {string} jid ex.: 5511999999999@c.us
+     */
+    async enviarMensagem(jid, texto, opcoes) {
+        try {
+            return await this.client.sendMessage(jid, texto, opcoes);
+        } catch (err) {
+            if (!this._ehErroDeInjecao(err)) throw err;
+            console.warn(`⚠️ Falha de injeção no WhatsApp (${err.message}).`);
+            await this.reiniciar();
+            return await this.client.sendMessage(jid, texto, opcoes);
+        }
     }
 
     /** QR Code atual em PNG (data URL) para mostrar no painel web; null se já conectado. */

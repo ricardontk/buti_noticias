@@ -177,6 +177,11 @@ SCHEMA = vol.Schema(
 
 def main():
     caminho = sys.argv[1] if len(sys.argv) > 1 else "config.yaml"
+    # o console do Windows é cp1252 e não aguenta emoji (ex.: "💬")
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     with open(caminho, encoding="utf-8") as arquivo:
         bruto = yaml.safe_load(arquivo)
 

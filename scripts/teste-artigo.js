@@ -33,6 +33,16 @@ const MATERIA = `<!DOCTYPE html><html><head><title>Manchete</title>
 
 const GOOGLE_NEWS = `<html><body><c-wiz><div jsrenderer="r" data-n-au="https://www.globo.com/agricultura/noticia/2026/10/drones"></div></c-wiz></body></html>`;
 
+// página do Google News sem o atributo oficial: os links de analytics vêm antes
+const GOOGLE_NEWS_SEM_ATRIBUTO = `<html><head>
+<script src="https://www.google-analytics.com/analytics.js"></script>
+<link rel="stylesheet" href="https://www.googletagmanager.com/gtm.css">
+</head><body>
+<a href="https://www.facebook.com/sharer">compartilhar</a>
+<a href="https://twitter.com/share">twitter</a>
+<a href="https://www.globo.com/agricultura/noticia/2026/10/drones-pulverizacao">abrir</a>
+</body></html>`;
+
 const falso = http.createServer((req, res) => {
     if (req.url === "/materia") {
         res.writeHead(200, { "Content-Type": "text/html" });
@@ -66,6 +76,14 @@ falso.listen(0, "127.0.0.1", async () => {
     // 2) URL original do Google News
     const url = extrairUrlGoogle(GOOGLE_NEWS);
     checar("acha a URL no Google News", url === "https://www.globo.com/agricultura/noticia/2026/10/drones", url);
+
+    // 2b) sem o atributo oficial: não pode pegar analytics.js nem redes sociais
+    const url2 = extrairUrlGoogle(GOOGLE_NEWS_SEM_ATRIBUTO);
+    checar(
+        "ignora analytics.js e redes sociais",
+        url2 === "https://www.globo.com/agricultura/noticia/2026/10/drones-pulverizacao",
+        url2
+    );
 
     // 3) busca real por HTTP
     const art = new Artigo({ timeout_ms: 3000 });

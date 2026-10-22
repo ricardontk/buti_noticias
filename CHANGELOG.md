@@ -6,6 +6,21 @@ Todas as mudanças relevantes deste app.
 
 ### Corrigido
 
+- **"Canal: não configurado" mesmo com a lista `canais` preenchida**: as
+  mensagens de status, o log de boot e o aviso de "pronto" olhavam só o
+  `canal_id`. Agora tudo usa a lista real de destinos (canal_id + canais) e
+  mostra quantos são e o modo de publicação.
+- **O link publicado saía como `https://www.google-analytics.com/analytics.js`**:
+  ao extrair a URL da página do Google News, o fallback pegava o primeiro link
+  externo — que era o script de analytics. Agora são ignorados analytics,
+  tags de social, scripts e imagens, e o link precisa parecer uma matéria.
+- **"Cannot read properties of undefined (reading 'getChat')"**: o
+  `whatsapp-web.js` roda dentro da página do WhatsApp Web e usa
+  `window.WWebJS.getChat(...)`. Quando o WhatsApp recarrega a página, o script
+  injetado some e todo envio quebra. Agora o bot **se recupera sozinho**:
+  identifica a falha, reinicia a sessão do WhatsApp (mantendo o login salvo no
+  volume) e tenta o envio de novo. Erros comuns (chat não encontrado, etc.)
+  continuam sendo propagados, sem reiniciar nada.
 - **O painel e a mensagem publicada usavam links diferentes**: o painel mostrava
   o link resolvido, mas a mensagem publicava o campo `linkReal` (que nunca
   existiu) e caía no link quebrado. Agora os dois usam a mesma função
@@ -32,7 +47,7 @@ Todas as mudanças relevantes deste app.
 - **Publicação mais "de influencer"**: o COMENTÁRIO passou de 1 para 2-3 frases,
   a persona da IA ficou mais de campo (fala do que muda na rotina de quem
   pulveriza, sem linguagem de comunicado) e a mensagem ganhou uma linha de
-  engajamento (`publicacao.gancho`, configurável).
+  engajamento — agora editável na **opção `publicacao_gancho` do app**.
 - Tetos para não estourar o free tier da Groq: `llm.max_chars_texto` (900 por
   matéria) e `llm.max_chars_total` (9000 no total) — cerca de 2,5 mil tokens de
   entrada por varredura.

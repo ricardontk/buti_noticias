@@ -63,6 +63,7 @@ aplica CANAL_ID canal_id
 aplica CANAIS canais
 aplica MODO_PUBLICACAO modo_publicacao
 aplica MEU_NUMERO meu_numero
+aplica PUBLICACAO_GANCHO publicacao_gancho
 aplica PORT painel_porta
 aplica LLM_PROVEDOR llm_provedor
 aplica GROQ_API_KEY groq_api_key

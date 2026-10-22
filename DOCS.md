@@ -75,8 +75,9 @@ Todas em **Ajustes → Aplicativos → Bot de Notícias → Configuração**.
 | Opção | Padrão | Para que serve |
 |---|---|---|
 | `canal_id` | vazio | ID do canal onde as notícias aprovadas são publicadas (`120363...@newsletter`) |
-| `canais` | vazio | Lista de canais separados por vírgula (para publicar em mais de um) |
+| `canais` | vazio | Lista de canais separados por vírgula (para publicar em mais de um). Pode ser usada **sozinha**, sem o `canal_id` |
 | `modo_publicacao` | `reserva` | `reserva` = primeiro que funcionar · `todos` = publica em todos |
+| `publicacao_gancho` | `💬 Se você também…` | Linha de engajamento no final de cada notícia publicada |
 | `meu_numero` | vazio | **Seu** WhatsApp: chegam os cards de aprovação e os avisos |
 | `painel_porta` | `8090` | Porta do painel web. O ingress do HA continua na 8090 — se mudar, o app escuta nas duas |
 | `llm_provedor` | `groq` | `groq` (nuvem), `ha_assist` (Assist/Ollama do HA), `ollama`, `heuristica` |

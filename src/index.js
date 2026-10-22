@@ -34,7 +34,7 @@ fs.mkdirSync(cfg.caminhos.auth, { recursive: true });
 const state = new State(cfg.caminhos.estado);
 const llm = new LLM(cfg);
 const wa = new WhatsAppClient(cfg);
-const publisher = new Publisher(wa.client, cfg);
+const publisher = new Publisher(wa.client, cfg, wa);
 const fila = new Queue({ state, publisher, cfg, meuNumero: cfg.meu_numero });
 const resolverLinks = new ResolverLink(wa.client, {
     orcamento_ms: cfg.busca?.resolver_orcamento_ms,
@@ -52,7 +52,9 @@ relevance.carregarPalavras(cfg.caminhos.fontes);
 
 // Configuração incompleta: o app ainda funciona, mas avisa o que falta.
 const faltando = [];
-if (!cfg.canal_id) faltando.push("canal_id (canal do WhatsApp onde publicar)");
+if (!publisher.destinos.length) {
+    faltando.push("canal_id ou canais (canal do WhatsApp onde publicar)");
+}
 if (!cfg.meu_numero) faltando.push("meu_numero (seu WhatsApp, para onde vão os avisos)");
 if (faltando.length) {
     console.warn(`⚠️ Configure no painel do app: ${faltando.join(" · ")}`);
@@ -62,9 +64,9 @@ if (faltando.length) {
 // De onde veio a configuração (opções do app têm prioridade sobre o config.json)
 const mascara = (v) => (v ? `${"*".repeat(Math.max(0, v.length - 4))}${v.slice(-4)}` : "(vazio)");
 console.log(
-    `⚙️ Configuração: canal=${cfg.canal_id || "(vazio)"} | meu_numero=${mascara(cfg.meu_numero)}` +
-        ` | canais=${publisher.destinos.length} (${publisher.modoPublicacao}) | ia=${cfg.llm.provedor}` +
-        ` | porta=${cfg.painel.porta}`
+    `⚙️ Configuração: canais=${publisher.destinos.length} (${publisher.destinos.join(", ") || "nenhum"})` +
+        ` | meu_numero=${mascara(cfg.meu_numero)} | modo=${publisher.modoPublicacao}` +
+        ` | ia=${cfg.llm.provedor} | porta=${cfg.painel.porta}`
 );
 
 let emVarredura = false;
@@ -312,10 +314,14 @@ function textoAjuda() {
 
 async function statusGeral() {
     const s = state.data;
+    const destinos = publisher.destinos;
     return [
         "📊 *Status do Bot de Notícias*",
         "",
-        `Canal: \`${cfg.canal_id || "não configurado"}\``,
+        destinos.length
+            ? `Canal${destinos.length > 1 ? "is" : ""}: ${destinos.map((d) => `\`${d}\``).join(", ")}`
+            : "Canal: *não configurado*",
+        `Publicação: ${publisher.modoPublicacao}${destinos.length > 1 ? " (publica em todos)" : ""}`,
         `Você: ${cfg.meu_numero ? `+${cfg.meu_numero}` : "não configurado"}`,
         `IA: ${llm.cfg.provedor} / ${llm.modeloAtivo}`,
         `Última varredura: ${s.lastScan ? new Date(s.lastScan).toLocaleString("pt-BR") : "nunca"}`,
@@ -448,11 +454,17 @@ if (cfg.resumo_diario?.ativo) {
 // ------------------------------------------------------------- WhatsApp ---
 wa.registrar({
     onReady: async () => {
-        console.log(`🤖 Bot de Notícias ativo. Canal: ${cfg.canal_id || "(não configurado)"}`);
+        console.log(`🤖 Bot de Notícias ativo. Canais: ${publisher.destinos.join(", ") || "(não configurado)"}`);
         try {
             await publisher.enviarPara(
                 cfg.meu_numero,
-                `🤖 *Bot de Notícias pronto!*\n\nCanal: \`${cfg.canal_id || "não configurado"}\`\nIA: ${llm.cfg.provedor} / ${llm.modeloAtivo}\n\nMande *noticias* quando quiser, ou use o painel.\nAjuda: *ajuda*`
+                `🤖 *Bot de Notícias pronto!*\n\n${
+                    publisher.destinos.length
+                        ? `Canal${publisher.destinos.length > 1 ? "is" : ""}: ${publisher.destinos
+                              .map((d) => `\`${d}\``)
+                              .join(", ")}`
+                        : "Canal: *não configurado*"
+                }\nIA: ${llm.cfg.provedor} / ${llm.modeloAtivo}\n\nMande *noticias* quando quiser, ou use o painel.\nAjuda: *ajuda*`
             );
         } catch (err) {
             console.error("⚠️ não consegui mandar a mensagem de prontidão:", err.message);

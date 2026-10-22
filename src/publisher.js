@@ -21,9 +21,16 @@ const { MessageMedia } = require("whatsapp-web.js");
 const http = axios.create({ timeout: 20000 });
 
 class Publisher {
-    constructor(client, cfg) {
-        this.client = client;
+    constructor(client, cfg, wa) {
+        this.client = client; // cliente do whatsapp-web.js
+        this.wa = wa || null; // wrapper (envia com recuperação automática)
         this.cfg = cfg;
+    }
+
+    /** Envia uma mensagem (com recuperação se a página do WhatsApp recarregou). */
+    async _enviar(jid, texto, opcoes) {
+        if (this.wa?.enviarMensagem) return this.wa.enviarMensagem(jid, texto, opcoes);
+        return this.client.sendMessage(jid, texto, opcoes);
     }
 
     get destino() {
@@ -38,6 +45,10 @@ class Publisher {
      * Aceita `canais` como lista ou como texto separado por vírgula.
      */
     get destinos() {
+        // grupo como destino único (modo antigo)
+        if (this.cfg.destino_padrao === "grupo" && this.cfg.destino_grupo) {
+            return [this.cfg.destino_grupo];
+        }
         const lista = [];
         const bruto = this.cfg.canais;
         const partes = Array.isArray(bruto)
@@ -134,9 +145,9 @@ class Publisher {
 
             // Caminho 2: envio direto
             if (opcoes.media) {
-                await this.client.sendMessage(destino, opcoes.media, { caption: texto });
+                await this._enviar(destino, opcoes.media, { caption: texto });
             } else {
-                await this.client.sendMessage(destino, texto);
+                await this._enviar(destino, texto);
             }
             return { ok: true };
         } catch (err) {
@@ -147,7 +158,7 @@ class Publisher {
     /** Envia uma mensagem qualquer (usado para falar com você) */
     async enviarPara(numero, texto) {
         const jid = `${String(numero).replace(/\D/g, "")}@c.us`;
-        return this.client.sendMessage(jid, texto);
+        return this._enviar(jid, texto);
     }
 }
 

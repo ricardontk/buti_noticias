@@ -123,6 +123,7 @@ function load() {
     }
     if (process.env.MODO_PUBLICACAO) cfg.modo_publicacao = process.env.MODO_PUBLICACAO;
     if (process.env.MEU_NUMERO) cfg.meu_numero = process.env.MEU_NUMERO;
+    if (process.env.PUBLICACAO_GANCHO) cfg.publicacao.gancho = process.env.PUBLICACAO_GANCHO;
     if (process.env.ADM_PHONE) cfg.admin_phone = process.env.ADM_PHONE;
     if (process.env.HA_TOKEN) cfg.llm.ha_token = process.env.HA_TOKEN;
     if (process.env.GROQ_API_KEY) cfg.llm.groq_api_key = process.env.GROQ_API_KEY;
