@@ -10,7 +10,7 @@ function dataCurta(iso) {
     return moment(iso).tz(TZ).format("DD/MM/YYYY");
 }
 
-const { ehLinkPublicavel } = require("./artigo");
+const { ehLinkPublicavel, ehLinkHttp } = require("./artigo");
 
 /**
  * Link final: o resolvido (veículo real) quando for um link válido;
@@ -18,12 +18,15 @@ const { ehLinkPublicavel } = require("./artigo");
  *
  * Links inválidos acontecem quando a resolução falha: o Chromium devolve
  * "chrome-error://chromewebdata/" e publicar isso quebraria a notícia.
+ *
+ * Observação: o link original do feed costuma ser do Google News
+ * (news.google.com) — ele redireciona para a matéria e é publicável.
  */
 function linkFinal(item) {
     const resolvido = String(item.linkReal || item.link || "");
     if (ehLinkPublicavel(resolvido)) return resolvido;
     const original = String(item.linkOriginal || "");
-    if (ehLinkPublicavel(original)) return original;
+    if (ehLinkHttp(original)) return original;
     return ""; // nenhum link publicável
 }
 

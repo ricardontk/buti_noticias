@@ -140,10 +140,43 @@ class LLM {
         this.cfg = cfg.llm || {};
         this.http = axios.create({ timeout: this.cfg.timeout_ms || 60000 });
         this.degradado = false; // vira true se o LLM falhar
+        this.ultimoErro = ""; // última mensagem de erro (para mostrar no painel)
     }
 
     get disponivel() {
         return this.cfg.provedor !== "heuristica" && !this.degradado;
+    }
+
+    /**
+     * Confere se o modelo configurado existe no provedor.
+     * Sem isso, o bot falha em silêncio e publica os títulos em inglês
+     * (a heurística não traduz).
+     */
+    async verificarModelo() {
+        if (this.cfg.provedor !== "groq") return true;
+        try {
+            const headers = {};
+            if (this.cfg.groq_api_key) headers.Authorization = `Bearer ${this.cfg.groq_api_key}`;
+            const r = await this.http.get(`${this.cfg.groq_url || "https://api.groq.com/openai/v1"}/models`, {
+                headers,
+            });
+            const ids = (r.data?.data || []).map((m) => m.id);
+            const atual = this.cfg.groq_modelo;
+            if (ids.length && atual && !ids.includes(atual)) {
+                this.ultimoErro = `modelo "${atual}" não existe na Groq`;
+                console.warn(
+                    `⚠️ ${this.ultimoErro}. Modelos disponíveis: ${ids.slice(0, 8).join(", ")}...`
+                );
+                console.warn("   Troque pela opção groq_modelo do app ou pelo comando 'modelo <id>' no WhatsApp.");
+                return false;
+            }
+            console.log(`✅ Modelo da IA verificado na Groq: ${atual} (${ids.length} disponíveis)`);
+            return true;
+        } catch (err) {
+            this.ultimoErro = `não consegui falar com a Groq (${err.message})`;
+            console.warn(`⚠️ ${this.ultimoErro}`);
+            return false;
+        }
     }
 
     get modeloAtivo() {
@@ -257,7 +290,19 @@ class LLM {
                 casados.has(i) ? { ...c, ...casados.get(i) } : { ...c, ...traduzirHeuristica(c) }
             );
         } catch (err) {
-            console.error(`⚠️ LLM falhou (${err.message}) — usando heurística.`);
+            this.ultimoErro = err.message;
+            const mensagem = err.response?.data?.error?.message || err.message;
+            const modelo = this.cfg.groq_modelo;
+            if (/model|not found|400|404/i.test(mensagem) && this.cfg.provedor === "groq") {
+                console.error(
+                    `⚠️ LLM falhou (${mensagem}) — usando heurística. ` +
+                        `Se a mensagem fala em "model", o modelo "${modelo}" não existe na Groq: ` +
+                        `veja a lista no painel (Modelos de texto) ou troque com "modelo <id>" no WhatsApp.`
+                );
+            } else {
+                console.error(`⚠️ LLM falhou (${mensagem}) — usando heurística.`);
+            }
+            this.ultimoErro = mensagem;
             if (this.cfg.fallback_heuristico !== false) {
                 this.degradado = true;
                 return candidatos.map((c) => ({ ...c, ...traduzirHeuristica(c) }));

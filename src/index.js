@@ -375,7 +375,12 @@ const api = new Api({
             canais: publisher.destinos,
             modo_publicacao: publisher.modoPublicacao,
             meu_numero: cfg.meu_numero,
-            ia: { provedor: llm.cfg.provedor, modelo: llm.modeloAtivo, degradado: llm.degradado },
+            ia: {
+                provedor: llm.cfg.provedor,
+                modelo: llm.modeloAtivo,
+                degradado: llm.degradado,
+                erro: llm.ultimoErro || "",
+            },
             whatsapp: { conectado: wa.conectado },
             ultima_varredura: state.data.lastScan,
             ultima_publicacao: state.data.lastPublish,
@@ -396,6 +401,7 @@ const api = new Api({
                 // um link quebrado)
                 link: linkFinal(i),
                 linkOriginal: i.linkOriginal || "",
+                linkBruto: i.link || "",
                 fonte: i.fonte,
                 regiao: i.regiao,
                 data: i.data,
@@ -498,8 +504,10 @@ wa.registrar({
 wa.iniciar();
 
 // -------------------------------------------------------- Home Assistant ---
-// Conecta no HA (aviso de celular + estado da fila) e mantém atualizado.
+// Confere se o modelo de IA configurado existe no provedor (sem isso os
+// títulos saem em inglês, sem tradução), conecta no HA e mantém atualizado.
 (async () => {
+    await llm.verificarModelo();
     await atualizarHA();
     // Não reavisa de notícias que já estavam na fila antes do bot subir.
     if (!ultimoAvisoFila) ultimoAvisoFila = fila.pendentes.length;

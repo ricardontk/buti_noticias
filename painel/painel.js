@@ -92,8 +92,17 @@
       };
       set("stPronto", s.pronto ? "🟢 pronto" : "🟡 iniciando");
       set("stWhats", s.whatsapp?.conectado ? "🟢 conectado" : "🟡 aguardando QR");
-      set("stIA", s.ia ? `${s.ia.provedor} / ${s.ia.modelo}` : "—");
-      if (s.ia && s.ia.degradado) set("stIA", `${s.ia.provedor} / ${s.ia.modelo} (degradado)`);
+      if (s.ia) {
+        const modelo = s.ia.modelo || "?";
+        if (s.ia.degradado) {
+          const motivo = s.ia.erro ? ` — ${s.ia.erro}` : "";
+          set("stIA", `🔴 ${s.ia.provedor} (sem IA${motivo})`);
+        } else {
+          set("stIA", `🟢 ${s.ia.provedor} / ${modelo}`);
+        }
+      } else {
+        set("stIA", "—");
+      }
       const canais = s.canais || (s.canal_id ? [s.canal_id] : []);
       set("stCanais", canais.length ? `${canais.length} · ${canais[0]}` : "—");
       set("stVarredura", dt(s.ultima_varredura));
@@ -124,14 +133,16 @@
         return;
       }
       box.innerHTML = d.modelos
-        .map((m) => {
-          const extras = [m.contexto ? `${Math.round(m.contexto / 1000)}k ctx` : null, m.tamanho, m.nome]
-            .filter(Boolean)
-            .join(" · ");
-          return `<li><span class="tag">${esc(d.provedor)}</span><code>${esc(m.id)}</code>${
-            extras ? `<div class="mut">${esc(extras)}</div>` : ""
-          }</li>`;
-        })
+        .map(
+          (m) => `<li style="cursor:pointer" data-modelo="${esc(m.id)}">
+            <span class="tag">${esc(d.provedor)}</span><code>${esc(m.id)}</code>
+            <div class="mut">${esc(
+              [m.contexto ? `${Math.round(m.contexto / 1000)}k ctx` : null, m.tamanho, m.nome]
+                .filter(Boolean)
+                .join(" · ")
+            )} · <b>usar este</b></div>
+          </li>`
+        )
         .join("");
     } catch (e) {
       box.textContent = e.message === "nao autorizado" ? "" : "erro ao carregar";
@@ -212,21 +223,34 @@
       }
       card.style.display = "block";
       box.innerHTML = itens
-        .map(
-          (it) => `<div class="item" data-id="${esc(it.id || it.ordem)}">
+        .map((it) => {
+          const link = it.link || "";
+          const original = it.linkOriginal || "";
+          const bruta = it.linkBruto || "";
+          const extras = [];
+          if (link) {
+            extras.push(`<a href="${esc(link)}" target="_blank" rel="noopener">abrir matéria</a>`);
+          }
+          if (original && original !== link) {
+            extras.push(`<a href="${esc(original)}" target="_blank" rel="noopener">link do feed</a>`);
+          }
+          if (!link && bruta) {
+            extras.push(`<span style="color:#e8a3a3">link inválido: ${esc(bruta.slice(0, 60))}</span>`);
+          }
+          return `<div class="item" data-id="${esc(it.id || it.ordem)}">
             <b>${esc(it.titulo)}</b>
             ${it.resumo ? `<div class="resumo">${esc(it.resumo)}</div>` : ""}
             <div class="mut" style="font-size:12px">
               <span class="tag ${it.regiao === "BR" ? "br" : "mundo"}">${it.regiao === "BR" ? "BR" : "Mundo"}</span>
               ${esc(it.fonte || "")} · ${dt(it.data)}
-              ${it.link ? ` · <a href="${esc(it.link)}" target="_blank" rel="noopener">abrir</a>` : ""}
+              ${extras.length ? " · " + extras.join(" · ") : ""}
             </div>
             <div class="acoes" style="margin-top:10px">
               <button class="pub" data-acao="publicar">✅ Publicar</button>
               <button class="pul" data-acao="pular">⏭️ Pular</button>
             </div>
-          </div>`
-        )
+          </div>`;
+        })
         .join("");
     } catch (e) {
       /* silencioso */
@@ -326,6 +350,27 @@
       const item = botao.closest(".item");
       if (!item) return;
       agirNaFila(item.dataset.id, botao.dataset.acao, botao);
+    });
+  }
+
+  const boxModelos = $("listaModelos");
+  if (boxModelos) {
+    boxModelos.addEventListener("click", async (ev) => {
+      const item = ev.target.closest("[data-modelo]");
+      if (!item) return;
+      const id = item.dataset.modelo;
+      try {
+        const r = await api("/api/modelo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const d = await r.json();
+        toast(d.ok ? `✅ Agora usando ${d.modelo || id}` : `❌ ${d.erro || "não consegui trocar"}`);
+      } catch (e) {
+        toast("Falha ao trocar o modelo.");
+      }
+      carregarStatus();
     });
   }
 

@@ -2,6 +2,22 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.5.2
+
+### Corrigido
+
+- **Os títulos saíam em inglês**: quando a IA falha, o bot cai no modo reserva
+  (heurística), que só limpa o título — sem traduzir. Agora:
+  - no boot, o bot **confere se o modelo configurado existe no provedor** e
+    avisa no log qual é o problema (com a lista de modelos disponíveis);
+  - o erro fica visível no painel (🔴 em vez de "degradado") e no status do
+    WhatsApp;
+  - a mensagem no log diz na hora quando o problema é o **nome do modelo**;
+  - dá para **trocar o modelo com um clique** na lista "Modelos de texto" do
+    painel (além do comando `modelo <id>` no WhatsApp).
+- O link original do feed (Google News) voltou a ser usado como reserva — ele
+  redireciona para a matéria e é publicável.
+
 ## 1.5.1
 
 ### Corrigido

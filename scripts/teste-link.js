@@ -49,6 +49,14 @@ const analytics = {
 checar("analytics.js é descartado", !linkFinal(analytics).includes("analytics.js"), linkFinal(analytics));
 checar("usa o original quando o link é script", linkFinal(analytics) === analytics.linkOriginal, linkFinal(analytics));
 
+// 5) o link original do Google News é publicável (redireciona no navegador)
+const soOriginal = { titulo: "Z", link: "", linkOriginal: "https://news.google.com/rss/articles/abc" };
+checar("link do Google News serve de reserva", linkFinal(soOriginal) === soOriginal.linkOriginal, linkFinal(soOriginal));
+
+// 6) item com analytics.js e SEM original: a API manda o bruto para o painel
+const semReserva = { titulo: "W", link: "https://www.google-analytics.com/analytics.js" };
+checar("sem reserva, não inventa link", linkFinal(semReserva) === "", JSON.stringify(linkFinal(semReserva)));
+
 // 4) a mensagem publicada usa o mesmo link
 const cfg = { publicacao: { prefixo: "🚁", rodape: "Fonte: {fonte} | {data}" } };
 const texto = mensagemCanal(itemQuebrado, cfg);
