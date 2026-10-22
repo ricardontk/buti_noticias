@@ -43,6 +43,14 @@ const GOOGLE_NEWS_SEM_ATRIBUTO = `<html><head>
 <a href="https://www.globo.com/agricultura/noticia/2026/10/drones-pulverizacao">abrir</a>
 </body></html>`;
 
+// página real do Google News: o JSON inline tem vários "url" e o primeiro
+// deles é o analytics.js (foi o que vazou para a publicação)
+const GOOGLE_NEWS_JSON = `<html><head><script>
+var data = {"url":"https://www.google-analytics.com/analytics.js","tracking":"1"};
+var wiz = {"url":"https://news.google.com/rss/articles/CBMi?oc=5","target":"https://www.pna.gov.ph/agri/2026/10/21/drone-pulverization-news"};
+var outros = {"url":"https://www.pna.gov.ph/agri/2026/10/21/drone-pulverization-news"};
+</script></head><body></body></html>`;
+
 const falso = http.createServer((req, res) => {
     if (req.url === "/materia") {
         res.writeHead(200, { "Content-Type": "text/html" });
@@ -83,6 +91,14 @@ falso.listen(0, "127.0.0.1", async () => {
         "ignora analytics.js e redes sociais",
         url2 === "https://www.globo.com/agricultura/noticia/2026/10/drones-pulverizacao",
         url2
+    );
+
+    // 2c) JSON inline com vários "url": o analytics.js é o primeiro
+    const url3 = extrairUrlGoogle(GOOGLE_NEWS_JSON);
+    checar(
+        "JSON inline não entrega o analytics.js",
+        url3 === "https://www.pna.gov.ph/agri/2026/10/21/drone-pulverization-news",
+        url3
     );
 
     // 3) busca real por HTTP

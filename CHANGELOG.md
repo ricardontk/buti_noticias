@@ -2,6 +2,19 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.5.1
+
+### Corrigido
+
+- **O link publicado saía como `https://www.google-analytics.com/analytics.js`**:
+  a página do Google News tem vários `"url"` no JSON inline e o primeiro deles é
+  o script de analytics. Agora **todos** os padrões de extração (atributo
+  oficial, JSON inline, `href` e `src`) passam pelo mesmo filtro — só é aceito
+  link http(s) que pareça matéria. Se nenhum candidato servir, o bot usa o
+  navegador; se também falhar, publica o link original do feed.
+- O log agora mostra quando o navegador é aberto e quando o link final não
+  pôde ser resolvido.
+
 ## 1.5.0
 
 ### Corrigido

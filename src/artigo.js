@@ -57,7 +57,7 @@ const NAO_E_ARTIGO =
 function extrairUrlGoogle(html) {
     const texto = String(html || "");
 
-    // 1) atributo oficial do Google News
+    // 1) atributo oficial do Google News (é o Google dizendo qual é a matéria)
     const padroes = [
         /data-n-au="(https?:\/\/[^"]+)"/i,
         /data-n-au='(https?:\/\/[^']+)'/i,
@@ -65,18 +65,23 @@ function extrairUrlGoogle(html) {
     ];
     for (const re of padroes) {
         const m = texto.match(re);
-        if (m) return decodir(m[1]);
+        if (m) {
+            const link = decodir(m[1]);
+            if (ehLinkPublicavel(link)) return link;
+        }
     }
 
-    // 2) a URL aparece em JSON dentro da página
-    const json = texto.match(/"url":"(https?:\/\/[^"\\]+)"/i);
-    if (json) return decodir(json[1]);
+    // 2) outros candidatos: o JSON inline da página tem vários "url" (o
+    //    analytics.js é um deles) — então percorremos todos até achar uma
+    //    URL que pareça mesmo uma matéria.
+    const candidatos = [];
+    for (const m of texto.matchAll(/"url":"(https?:\/\/[^"\\]+)"/gi)) candidatos.push(decodir(m[1]));
+    for (const m of texto.matchAll(/"target":"(https?:\/\/[^"\\]+)"/gi)) candidatos.push(decodir(m[1]));
+    for (const m of texto.matchAll(/href="(https?:\/\/[^"]+)"/gi)) candidatos.push(decodir(m[1]));
+    for (const m of texto.matchAll(/src="(https?:\/\/[^"]+)"/gi)) candidatos.push(decodir(m[1]));
 
-    // 3) último recurso: o primeiro link que parece matéria de verdade
-    //    (a página tem analytics.js, pixels de social, etc. antes dela)
-    const links = [...texto.matchAll(/href="(https?:\/\/[^"]+)"/gi)].map((m) => decodir(m[1]));
-    for (const link of links) {
-        if (NAO_E_ARTIGO.test(link)) continue;
+    for (const link of candidatos) {
+        if (!ehLinkPublicavel(link)) continue;
         // quer um caminho com conteúdo (ex.: /agricultura/noticia/2026/10/x)
         const caminho = link.replace(/^https?:\/\/[^/]+/, "");
         if (caminho.split("/").filter(Boolean).length < 2) continue;

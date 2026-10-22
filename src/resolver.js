@@ -14,7 +14,7 @@
  *     original do Google News (que funciona, só não é o link "limpo").
  */
 const axios = require("axios");
-const { extrairUrlGoogle } = require("./artigo");
+const { extrairUrlGoogle, ehLinkPublicavel } = require("./artigo");
 
 const USER_AGENT =
     "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
@@ -38,9 +38,10 @@ class ResolverLink {
         return /news\.google\.com/i.test(link || "");
     }
 
-    /** Link que faz sentido publicar: http(s) e que não é do Google News. */
+    /** Link que faz sentido publicar: http(s), que não é do Google News e que é
+     *  de verdade uma matéria (não script, analytics ou rede social). */
     _ehLinkUtil(link) {
-        return /^https?:\/\//i.test(String(link || "")) && !this._ehGoogle(link);
+        return ehLinkPublicavel(link);
     }
 
     /**
@@ -68,8 +69,12 @@ class ResolverLink {
         }
 
         // 2) caminho caro: navegador (Chromium que já existe no container)
+        console.log(`   🌐 abrindo no navegador (${link.slice(0, 60)}…)`);
         const viaNavegador = await this._tentarNavegador(link, deadline);
         this.cache.set(link, viaNavegador);
+        if (viaNavegador === link) {
+            console.log(`   ⚠️  não consegui o link final — mantendo o do feed`);
+        }
         return viaNavegador;
     }
 
