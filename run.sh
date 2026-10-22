@@ -1,7 +1,15 @@
-#!/usr/bin/env bash
+#!/usr/bin/with-contenv bashio
 set -e
 
 echo "Iniciando o Bot de Notícias (Drones de Pulverização)..."
+
+# O shebang acima (with-contenv bashio) é obrigatório: é o bashio que lê as
+# opções configuradas no painel do app (/data/options.json). Sem ele, nenhuma
+# opção do app chega ao bot.
+if ! declare -F bashio::config >/dev/null 2>&1; then
+    echo "❌ bashio indisponível — as opções do app NÃO serão aplicadas."
+    echo "   Verifique o shebang do run.sh e a imagem base (ghcr.io/home-assistant/aarch64-base)."
+fi
 
 # Volume persistente do add-on
 mkdir -p /share/bot_noticias
@@ -40,11 +48,15 @@ opcao() {
 }
 
 aplica() {
-    local valor
-    valor="$(opcao "$2")"
+    local nome="$1" chave="$2" valor
+    valor="$(opcao "$chave")"
     if [ -n "$valor" ]; then
-        export "$1=$valor"
-        echo "⚙️  $1 = $valor"
+        export "$nome=$valor"
+        # não loga segredos
+        case "$nome" in
+            *KEY|*TOKEN|*SECRET|*PASSWORD) echo "⚙️  $nome = (definido)" ;;
+            *) echo "⚙️  $nome = $valor" ;;
+        esac
     fi
 }
 

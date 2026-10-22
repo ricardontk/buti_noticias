@@ -14,6 +14,7 @@ aprova vai para o canal.
 - 🎯 Filtra só o que é sobre pulverização e descarta o que já mandou antes
 - 🤖 Reescreve o texto em português com o tom do canal (Groq, Assist do HA ou Ollama)
 - ✅ **Nada é publicado sem você aprovar** — o card chega no seu WhatsApp pessoal
+- 🖥️ Painel web completo: **veja as notícias e aprove/­pule por lá mesmo**
 - 📱 Painel web integrado ao Home Assistant (o botão fica dentro do HA)
 - 📲 QR Code do WhatsApp direto no painel web (para conectar sem olhar o log)
 - 🔢 Publica em **um ou mais canais**, com opção de reserva

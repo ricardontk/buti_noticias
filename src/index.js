@@ -51,7 +51,16 @@ if (!cfg.canal_id) faltando.push("canal_id (canal do WhatsApp onde publicar)");
 if (!cfg.meu_numero) faltando.push("meu_numero (seu WhatsApp, para onde vão os avisos)");
 if (faltando.length) {
     console.warn(`⚠️ Configure no painel do app: ${faltando.join(" · ")}`);
+    console.warn("   (Ajustes → Aplicativos → Bot de Notícias → Configuração, e reinicie o app)");
 }
+
+// De onde veio a configuração (opções do app têm prioridade sobre o config.json)
+const mascara = (v) => (v ? `${"*".repeat(Math.max(0, v.length - 4))}${v.slice(-4)}` : "(vazio)");
+console.log(
+    `⚙️ Configuração: canal=${cfg.canal_id || "(vazio)"} | meu_numero=${mascara(cfg.meu_numero)}` +
+        ` | canais=${publisher.destinos.length} (${publisher.modoPublicacao}) | ia=${cfg.llm.provedor}` +
+        ` | porta=${cfg.painel.porta}`
+);
 
 let emVarredura = false;
 const statusFontes = {};
@@ -348,6 +357,23 @@ const api = new Api({
             conectado: wa.conectado,
             qr: await wa.qrDataUrl(),
         }),
+        fila: async () => ({
+            itens: fila.pendentes.map((i) => ({
+                id: i.id || null,
+                ordem: i.ordem,
+                titulo: i.titulo,
+                resumo: i.resumo || "",
+                link: i.linkReal || i.link,
+                fonte: i.fonte,
+                regiao: i.regiao,
+                data: i.data,
+            })),
+        }),
+        agirFila: async (id, acao) => fila.agir(id, acao),
+        publicarTodas: async () => {
+            const publicadas = await fila.publicarTodas();
+            return { ok: true, publicadas: publicadas.length };
+        },
         fontes: async () => ({ fontes: fontes.fontes || [], status: statusFontes }),
         ultimas: async () => ({ ultimas: state.data.publicados.slice(0, 10) }),
         modelos: async () => llm.listarModelos(),

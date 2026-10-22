@@ -2,6 +2,28 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.3.0
+
+### Adicionado
+
+- **Aprovação pelo painel web**: o painel agora lista as notícias que estão
+  esperando e permite **Publicar**, **Pular** ou **Publicar todas** — sem
+  precisar responder no WhatsApp. A fila do painel e a do WhatsApp são a mesma:
+  o que você aprovar num lugar não é perguntado de novo no outro.
+- Rotas novas na API: `GET /api/fila`, `POST /api/fila/{id}/publicar`,
+  `POST /api/fila/{id}/pular` e `POST /api/fila/todas`.
+- `scripts/teste-fila-web.js` (testa a fila pela API) e
+  `scripts/teste-publicacao.js` (testa os modos de canal).
+
+### Corrigido
+
+- **As opções do app não chegavam ao bot**: o `run.sh` usava
+  `#!/usr/bin/env bash`, e é o *bashio* (via `#!/usr/bin/with-contenv bashio`)
+  quem lê as opções configuradas no painel do app. Agora o shebang está correto
+  e o script avisa no log se o bashio não estiver disponível.
+- O log agora mostra a configuração no boot (canal, telefone mascarado, canais,
+  IA e porta) e diz onde configurar o que faltar.
+
 ## 1.2.0
 
 ### Adicionado

@@ -141,6 +141,97 @@
     }
   }
 
+  async function carregarFila() {
+    const card = $("cardFila");
+    const box = $("filaItens");
+    try {
+      const r = await api("/api/fila");
+      const d = await r.json();
+      const itens = d.itens || [];
+      if (!itens.length) {
+        card.style.display = "none";
+        return;
+      }
+      card.style.display = "block";
+      box.innerHTML = itens
+        .map(
+          (it) => `<div class="item" data-id="${esc(it.id || it.ordem)}">
+            <b>${esc(it.titulo)}</b>
+            ${it.resumo ? `<div class="resumo">${esc(it.resumo)}</div>` : ""}
+            <div class="mut" style="font-size:12px">
+              <span class="tag ${it.regiao === "BR" ? "br" : "mundo"}">${it.regiao === "BR" ? "BR" : "Mundo"}</span>
+              ${esc(it.fonte || "")} · ${dt(it.data)}
+              ${it.link ? ` · <a href="${esc(it.link)}" target="_blank" rel="noopener">abrir</a>` : ""}
+            </div>
+            <div class="acoes" style="margin-top:10px">
+              <button class="pub" data-acao="publicar">✅ Publicar</button>
+              <button class="pul" data-acao="pular">⏭️ Pular</button>
+            </div>
+          </div>`
+        )
+        .join("");
+    } catch (e) {
+      box.textContent = "não consegui carregar a fila";
+    }
+  }
+
+  function esc(texto) {
+    return String(texto == null ? "" : texto).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[c]);
+  }
+
+  async function agirNaFila(id, acao, botao) {
+    const html = botao.innerHTML;
+    botao.disabled = true;
+    botao.innerHTML = '<span class="spin"></span>';
+    try {
+      const r = await api(`/api/fila/${encodeURIComponent(id)}/${encodeURIComponent(acao)}`, { method: "POST" });
+      const d = await r.json();
+      if (d.ok === false) {
+        toast(d.erro || "não deu certo");
+      } else {
+        toast(acao === "publicar" ? "✅ Publicada no canal." : "⏭️ Item pulado.");
+      }
+    } catch (e) {
+      toast("Falha ao agir na fila.");
+    } finally {
+      botao.innerHTML = html;
+      botao.disabled = false;
+      carregarFila();
+      carregarStatus();
+    }
+  }
+
+  async function publicarTodas() {
+    const b = $("btnTodas");
+    const html = b.innerHTML;
+    b.disabled = true;
+    b.innerHTML = '<span class="spin"></span> Publicando…';
+    try {
+      const r = await api("/api/fila/todas", { method: "POST" });
+      const d = await r.json();
+      toast(`${d.publicadas || 0} notícia(s) publicada(s).`);
+    } catch (e) {
+      toast("Falha ao publicar.");
+    } finally {
+      b.innerHTML = html;
+      b.disabled = false;
+      carregarFila();
+      carregarStatus();
+    }
+  }
+
+  $("filaItens").addEventListener("click", (ev) => {
+    const botao = ev.target.closest("button[data-acao]");
+    if (!botao) return;
+    const item = botao.closest(".item");
+    if (!item) return;
+    agirNaFila(item.dataset.id, botao.dataset.acao, botao);
+  });
+
+  $("btnTodas").addEventListener("click", publicarTodas);
+
   $("btnBuscar").addEventListener("click", () => disparar("/api/buscar", "Busca"));
   $("btnMaisLidas").addEventListener("click", () => disparar("/api/mais-lidas", "Mais lidas"));
   $("btnModelos").addEventListener("click", carregarModelos);
@@ -151,7 +242,10 @@
   carregarUltimas();
   carregarFontes();
   carregarQR();
+  carregarFila();
   setInterval(carregarStatus, 15000);
   // o QR Code gira sozinho: a cada 10s enquanto não estiver conectado
   setInterval(carregarQR, 10000);
+  // a fila de aprovação também se atualiza sozinha
+  setInterval(carregarFila, 10000);
 })();

@@ -32,11 +32,63 @@ class Queue {
     /** Recebe os candidatos e começa a perguntar, um a um. */
     async iniciar(candidatos) {
         this.state.limparFila();
+        const lote = Date.now().toString(36);
         candidatos.forEach((c, i) => {
-            this.state.adicionarItem({ ...c, ordem: i + 1, status: "aguardando" });
+            this.state.adicionarItem({ ...c, id: `${lote}-${i}`, ordem: i + 1, status: "aguardando" });
         });
         this.state.saveNow();
         return this.enviarProximo();
+    }
+
+    /** Acha um item da fila pelo id (ou pela posição). */
+    achar(id) {
+        const fila = this.state.fila;
+        let item = fila.find((i) => i.id && String(i.id) === String(id));
+        if (!item && /^\d+$/.test(String(id))) item = fila[parseInt(id, 10)];
+        return item;
+    }
+
+    /**
+     * Ação vinda do painel web: publica ou pula um item específico.
+     * Se for o item que está esperando resposta no WhatsApp, o fluxo continua lá.
+     * @param {string} id
+     * @param {"publicar"|"pular"} acao
+     */
+    async agir(id, acao) {
+        const item = this.achar(id);
+        if (!item) return { ok: false, erro: "item não encontrado na fila" };
+        if (item.status !== "aguardando") {
+            return { ok: false, erro: `este item já está ${item.status}` };
+        }
+        const eraAtual = item === this.atual;
+
+        if (acao === "publicar") {
+            const ok = await this.publicarItem(item);
+            if (eraAtual) await this.enviarProximo();
+            return { ok: ok.ok, erro: ok.erro, item: { id: item.id, status: item.status } };
+        }
+
+        if (acao === "pular") {
+            item.status = "pulada";
+            this.state.registrarPulada(item);
+            this.state.aprender(item, false);
+            console.log(`⏭️  Pulada pelo painel: ${item.titulo}`);
+            if (eraAtual) await this.enviarProximo();
+            return { ok: true, item: { id: item.id, status: item.status } };
+        }
+
+        return { ok: false, erro: `ação desconhecida: ${acao}` };
+    }
+
+    /** Publica tudo que está na fila (usado pelo painel web). */
+    async publicarTodas() {
+        const publicados = [];
+        for (const pend of this.pendentes) {
+            const ok = await this.publicarItem(pend);
+            if (ok.ok) publicados.push(pend);
+        }
+        console.log(`✅ Publicadas ${publicados.length} notícia(s) pelo painel.`);
+        return publicados;
     }
 
     async enviarProximo() {

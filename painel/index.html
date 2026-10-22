@@ -43,6 +43,16 @@
            opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 90%; }
   .toast.on { opacity: 1; }
   #qrBox img { width: 100%; max-width: 320px; background: #fff; border-radius: 10px; padding: 10px; }
+  .item { border: 1px solid var(--borda); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: #1f272b; }
+  .item b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .item .resumo { font-size: 13px; color: var(--cinza); margin: 6px 0 8px; }
+  .acoes { display: flex; gap: 8px; }
+  .acoes button { flex: 1; padding: 10px; border: 0; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .acoes .pub { background: var(--verde); color: #fff; }
+  .acoes .pub:active { background: var(--verde-esc); }
+  .acoes .pul { background: #3a2a2a; color: #e8b3b3; }
+  .acoes .pul:active { background: #4a3333; }
+  .acoes button:disabled { opacity: .5; cursor: wait; }
   .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff55; border-top-color: #fff;
           border-radius: 50%; animation: s .8s linear infinite; vertical-align: -2px; }
   @keyframes s { to { transform: rotate(360deg); } }
@@ -62,6 +72,12 @@
       <b>Conectar usando este código</b>. A imagem se atualiza sozinha.
     </p>
     <button class="btn sec" id="btnQR" style="margin-top:10px">🔄 Atualizar código</button>
+  </div>
+
+  <div class="card" id="cardFila" style="display:none">
+    <h2>Aguardando sua aprovação</h2>
+    <div id="filaItens"></div>
+    <button class="btn sec" id="btnTodas" style="margin-top:10px">⚡ Publicar todas</button>
   </div>
 
   <div class="card">

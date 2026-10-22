@@ -5,6 +5,9 @@
  *   GET  /                 painel
  *   GET  /api/status       estado do bot
  *   GET  /api/qr           QR Code do WhatsApp (para conectar) e estado da sessão
+ *   GET  /api/fila         notícias aguardando sua aprovação
+ *   POST /api/fila/:id/:acao   publicar|pular um item da fila (painel web)
+ *   POST /api/fila/todas   publicar tudo que está na fila
  *   GET  /api/fontes       fontes e último resultado
  *   GET  /api/ultimas      últimas publicações
  *   GET  /api/modelos      modelos de texto disponíveis no provedor de IA
@@ -102,6 +105,18 @@ class Api {
             }
             if (pathname === "/api/qr") {
                 return this._json(res, await this.acoes.qr());
+            }
+            if (pathname === "/api/fila" && req.method === "GET") {
+                return this._json(res, await this.acoes.fila());
+            }
+            if (pathname === "/api/fila/todas" && req.method === "POST") {
+                return this._json(res, await this.acoes.publicarTodas());
+            }
+            const acaoFila = pathname.match(/^\/api\/fila\/([^/]+)\/([^/]+)$/);
+            if (acaoFila && req.method === "POST") {
+                const id = decodeURIComponent(acaoFila[1]);
+                const acao = decodeURIComponent(acaoFila[2]);
+                return this._json(res, await this.acoes.agirFila(id, acao));
             }
             if (pathname === "/api/fontes") {
                 return this._json(res, await this.acoes.fontes());

@@ -104,7 +104,38 @@ popularidade, canal alternativo) ficam no `config.json`, dentro do volume
 
 ---
 
-## 4. Como funciona
+## 4. O painel web
+
+O painel (o botão "Abrir interface web" do app, ou dentro do HA pelo *ingress*)
+faz tudo o que o WhatsApp faz, sem depender dele:
+
+| No painel | O que faz |
+|---|---|
+| **Conectar o WhatsApp** | mostra o QR Code para escanear (atualiza sozinho) |
+| **Aguardando sua aprovação** | lista as notícias da fila e permite **Publicar** ou **Pular** cada uma, ou **Publicar todas** |
+| **Buscar notícias agora** / **mais lidas** | dispara uma varredura |
+| **Status** | bot, WhatsApp, IA, canais, última varredura/publicação, fila, contadores |
+| **Modelos de texto** | lista e troca o modelo de IA |
+| **Últimas publicações** / **Fontes** | histórico e origem das matérias |
+
+A fila do painel e a do WhatsApp são **a mesma fila**: o que você aprovar no
+painel não chega a perguntar de novo no WhatsApp (e vice-versa).
+
+Rotas da API (úteis para automação):
+
+| Rota | O que faz |
+|---|---|
+| `GET /api/status` | estado do bot |
+| `GET /api/qr` | QR Code do WhatsApp (data URL) |
+| `GET /api/fila` | itens aguardando aprovação |
+| `POST /api/fila/{id}/publicar` | publica um item |
+| `POST /api/fila/{id}/pular` | pula um item |
+| `POST /api/fila/todas` | publica tudo |
+| `POST /api/buscar` | dispara varredura |
+
+---
+
+## 5. Como funciona
 
 ```
 [botão no painel] ou [comando no WhatsApp] ou [resumo diário automático]
@@ -142,7 +173,7 @@ Durante a fila de aprovação, `1`–`5` publicam/pulam, `todos` publica tudo e
 
 ---
 
-## 5. Home Assistant
+## 6. Home Assistant
 
 O app **já roda dentro do Home Assistant** e se integra sozinho. Não é preciso
 mexer em `configuration.yaml` nem criar automação.
@@ -171,7 +202,7 @@ sensores `rest`, scripts e dashboard prontos. **Esse modelo exige** editar o
 
 ---
 
-## 6. Solução de problemas
+## 7. Solução de problemas
 
 | Sintoma | O que fazer |
 |---|---|
@@ -188,7 +219,7 @@ Os logs ficam em **Ajustes → Aplicativos → Bot de Notícias → Registros** 
 
 ---
 
-## 7. Privacidade e dados
+## 8. Privacidade e dados
 
 - O app guarda localmente: login do WhatsApp, histórico do que já mandou, o
   perfil do que você aprova/pula e a fila atual — tudo em `/share/bot_noticias/`.
@@ -199,7 +230,7 @@ Os logs ficam em **Ajustes → Aplicativos → Bot de Notícias → Registros** 
 
 ---
 
-## 8. Para quem vai desenvolver
+## 9. Para quem vai desenvolver
 
 ```
 projeto bot noticias/
