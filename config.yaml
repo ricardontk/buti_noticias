@@ -41,5 +41,4 @@ ports:
   8090/tcp: 8090
 map:
   - share:rw
-  - homeassistant_config:rw
 homeassistant: true
