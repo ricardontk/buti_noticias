@@ -38,6 +38,22 @@ class HA {
 
     /** Requisição JSON no Core do HA (via proxy do Supervisor). */
     _req(method, caminho, corpo) {
+        return this._enviar(method, caminho, corpo, !!this.token);
+    }
+
+    /**
+     * Se a primeira tentativa (com token) for recusada, tenta sem token:
+     * o proxy do Supervisor libera /core/api para o app mesmo sem token.
+     */
+    async _enviar(method, caminho, corpo, comToken) {
+        let r = await this._req_puro(method, caminho, corpo, comToken);
+        if (!comToken && r.status === 401) {
+            r = await this._req_puro(method, caminho, corpo, false);
+        }
+        return r;
+    }
+
+    _req_puro(method, caminho, corpo, comToken) {
         return new Promise((resolve) => {
             let u;
             try {
@@ -47,7 +63,8 @@ class HA {
             }
             const lib = u.protocol === "https:" ? https : http;
             const dados = corpo === undefined ? null : JSON.stringify(corpo);
-            const headers = { ...this._headers };
+            const headers = { "Content-Type": "application/json" };
+            if (comToken && this.token) headers.Authorization = `Bearer ${this.token}`;
             if (dados) headers["Content-Length"] = Buffer.byteLength(dados);
 
             const req = lib.request(u, { method, headers }, (res) => {
@@ -73,19 +90,14 @@ class HA {
 
     /** Testa a conexão e descobre os celulares disponíveis para notificar. */
     async iniciar() {
-        if (!this.token) {
-            if (!this.avisoFalha) {
-                console.log("ℹ️ Home Assistant não configurado (sem SUPERVISOR_TOKEN) — recursos de HA desligados.");
-                this.avisoFalha = true;
-            }
-            this.tentouConectar = true;
-            return false;
-        }
         const r = await this._req("GET", "/config");
         this.tentouConectar = true;
         if (r.status !== 200) {
             if (!this.avisoFalha) {
-                console.warn(`⚠️ Não consegui falar com o Home Assistant (${r.status || r.erro}).`);
+                console.warn(
+                    `⚠️ Não consegui falar com o Home Assistant (${r.status || r.erro}).` +
+                        (this.token ? "" : " (sem SUPERVISOR_TOKEN — confira 'hassio_api: true' no config.yaml do app)")
+                );
                 this.avisoFalha = true;
             }
             return false;
@@ -93,7 +105,7 @@ class HA {
         this.conectado = true;
         this.avisoFalha = false;
         const versao = r.json?.version || "?";
-        console.log(`🏠 Home Assistant conectado (v${versao}).`);
+        console.log(`🏠 Home Assistant conectado (v${versao})${this.token ? "" : " — sem token"}.`);
         await this._detectarDispositivos();
         return true;
     }

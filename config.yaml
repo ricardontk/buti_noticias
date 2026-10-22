@@ -11,7 +11,9 @@ arch:
 # O painel do bot aparece dentro do Home Assistant (sem digitar IP nenhum).
 ingress: true
 ingress_port: 8090
-ingress_panel: true
+panel_icon: mdi:newspaper-variant
+panel_title: Bot de Notícias
+panel_admin: true
 
 options:
   canal_id: ""
@@ -28,7 +30,7 @@ options:
 schema:
   canal_id: str?
   meu_numero: str?
-  llm_provedor: "groq|ha_assist|ollama|heuristica"
+  llm_provedor: "list(groq|ha_assist|ollama|heuristica)"
   groq_api_key: str?
   groq_modelo: str?
   resumo_diario_hora: str?
@@ -41,4 +43,8 @@ ports:
   8090/tcp: 8090
 map:
   - share:rw
-homeassistant: true
+# Dá acesso à API do Home Assistant (via http://supervisor/core/api) e
+# injeta a variável SUPERVISOR_TOKEN no container. É a chave que existe em
+# todas as versões do Supervisor — a mais nova ("homeassistant_api") só
+# apareceu em 2026.05.
+hassio_api: true
