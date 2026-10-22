@@ -78,6 +78,9 @@ const testes = [
     ["scripts/teste-ha.js", "ponte com o Home Assistant"],
     ["scripts/teste-publicacao.js", "publicação em canais"],
     ["scripts/teste-fila-web.js", "fila de aprovação pela API"],
+    ["scripts/teste-resolver.js", "resolução de links do Google News"],
+    ["scripts/teste-artigo.js", "texto das matérias (sem navegador)"],
+    ["scripts/teste-link.js", "link publicado (nunca quebrado)"],
 ];
 for (const [arquivo, nome] of testes) {
     titulo(`3. Teste: ${nome}`);

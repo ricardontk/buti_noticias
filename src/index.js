@@ -19,10 +19,11 @@ const { Queue } = require("./queue");
 const { Api } = require("./api");
 const { HA } = require("./ha");
 const { ResolverLink } = require("./resolver");
+const { Artigo } = require("./artigo");
 const fetcher = require("./fetcher");
 const relevance = require("./relevance");
 const popularity = require("./popularity");
-const { cardAprovacao, semResultado, horaAgora } = require("./formatter");
+const { cardAprovacao, semResultado, horaAgora, linkFinal } = require("./formatter");
 
 const TZ = "America/Sao_Paulo";
 
@@ -35,7 +36,11 @@ const llm = new LLM(cfg);
 const wa = new WhatsAppClient(cfg);
 const publisher = new Publisher(wa.client, cfg);
 const fila = new Queue({ state, publisher, cfg, meuNumero: cfg.meu_numero });
-const resolverLinks = new ResolverLink(wa.client);
+const resolverLinks = new ResolverLink(wa.client, {
+    orcamento_ms: cfg.busca?.resolver_orcamento_ms,
+    paralelismo: cfg.busca?.resolver_paralelismo,
+});
+const artigo = new Artigo({ timeout_ms: cfg.busca?.texto_timeout_ms });
 
 let fontes = { fontes: [], tendencias: [] };
 try {
@@ -180,16 +185,34 @@ async function varredura(origem = "manual") {
         }
 
         // 7) resolve o link real (o Google News manda um redirect) — só dos que vão pro card
-        console.log("🔗 Resolvendo links...");
-        for (const item of sel) {
-            const real = await resolverLinks.resolver(item.link);
+        console.log(`🔗 Resolvendo ${sel.length} link(s)...`);
+        const resolvidos = await resolverLinks.resolverVarios(
+            sel.map((item) => item.link),
+            (feitas, total) => console.log(`   ${feitas}/${total} resolvido(s)`)
+        );
+        sel.forEach((item, i) => {
+            const real = resolvidos[i];
             if (real && real !== item.link) {
                 item.linkOriginal = item.link;
                 item.link = real;
             }
-        }
+        });
 
-        // 8) LLM: traduz e reescreve no tom do canal
+        // 8) busca o texto das matérias (por HTTP, sem abrir navegador) para a
+        //    IA escrever o comentário com base no conteúdo real
+        console.log("📄 Buscando o texto das matérias...");
+        const textos = await artigo.textos(
+            sel.map((item) => item.link),
+            cfg.busca?.texto_orcamento_ms,
+            cfg.busca?.texto_paralelismo
+        );
+        sel.forEach((item, i) => {
+            if (textos[i]) item.texto = textos[i];
+        });
+        const comTexto = sel.filter((i) => i.texto).length;
+        console.log(`   ${comTexto}/${sel.length} matéria(s) com texto`);
+
+        // 9) LLM: traduz e reescreve no tom do canal
         sel = await llm.reescrever(sel);
 
         // 9) pergunta para você
@@ -363,7 +386,10 @@ const api = new Api({
                 ordem: i.ordem,
                 titulo: i.titulo,
                 resumo: i.resumo || "",
-                link: i.linkReal || i.link,
+                // mesmo link que vai ser publicado (o painel nunca mostra
+                // um link quebrado)
+                link: linkFinal(i),
+                linkOriginal: i.linkOriginal || "",
                 fonte: i.fonte,
                 regiao: i.regiao,
                 data: i.data,
@@ -375,7 +401,12 @@ const api = new Api({
             return { ok: true, publicadas: publicadas.length };
         },
         fontes: async () => ({ fontes: fontes.fontes || [], status: statusFontes }),
-        ultimas: async () => ({ ultimas: state.data.publicados.slice(0, 10) }),
+        ultimas: async () => ({
+            ultimas: state.data.publicados.slice(0, 10).map((p) => ({
+                ...p,
+                link: linkFinal(p),
+            })),
+        }),
         modelos: async () => llm.listarModelos(),
         trocarModelo: async (id) => {
             if (!id) return { ok: false, erro: "id obrigatório" };

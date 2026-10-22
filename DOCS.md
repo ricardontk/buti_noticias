@@ -82,6 +82,8 @@ Todas em **Ajustes → Aplicativos → Bot de Notícias → Configuração**.
 | `llm_provedor` | `groq` | `groq` (nuvem), `ha_assist` (Assist/Ollama do HA), `ollama`, `heuristica` |
 | `groq_api_key` | vazio | Chave da Groq (só usada com `llm_provedor` = `groq`) |
 | `groq_modelo` | `qwen/qwen3.8-27b` | Modelo de texto da Groq |
+| `llm.max_chars_texto` | `500` | Teto de texto da matéria enviado por notícia (protege o free tier) |
+| `llm.max_chars_total` | `4000` | Teto de texto no total de uma varredura (~1,2 mil tokens) |
 | `resumo_diario_hora` | `07:00` | Horário do resumo automático (fuso America/Sao_Paulo) |
 | `max_noticias` | `5` | Quantas notícias entram no resumo diário |
 | `painel_token` | vazio | Senha do painel web. **Vazio = painel aberto** na sua rede |

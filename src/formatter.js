@@ -10,9 +10,20 @@ function dataCurta(iso) {
     return moment(iso).tz(TZ).format("DD/MM/YYYY");
 }
 
-/** Link final: o resolvido (veículo real) quando existir, senão o original. */
+/**
+ * Link final: o resolvido (veículo real) quando for um link válido;
+ * senão o link original do feed.
+ *
+ * Links inválidos acontecem quando a resolução falha: o Chromium devolve
+ * "chrome-error://chromewebdata/" e publicar isso quebraria a notícia.
+ */
 function linkFinal(item) {
-    return item.linkReal || item.link || "";
+    const resolvido = String(item.linkReal || item.link || "");
+    const valido = /^https?:\/\//i.test(resolvido) && !/^chrome-error:/i.test(resolvido);
+    if (valido) return resolvido;
+    const original = String(item.linkOriginal || "");
+    if (/^https?:\/\//i.test(original)) return original;
+    return ""; // nenhum link publicável
 }
 
 function horaAgora() {
@@ -27,8 +38,8 @@ function cardAprovacao(item, indice, total) {
         "",
         `*${item.titulo}*`,
     ];
-    if (item.resumo) {
-        linhas.push("", `_${item.resumo}_`);
+    if (item.comentario || item.resumo) {
+        linhas.push("", `_${item.comentario || item.resumo}_`);
     }
     linhas.push("", `🔗 ${linkFinal(item)}`);
     linhas.push(
@@ -46,15 +57,21 @@ function cardAprovacao(item, indice, total) {
     return linhas.filter((l) => l !== undefined).join("\n");
 }
 
-/** Mensagem publicada no canal. */
+/** Mensagem publicada no canal — tom de influencer de campo, não de comunicado. */
 function mensagemCanal(item, cfg = {}) {
     const pub = cfg.publicacao || {};
     const prefixo = pub.prefixo || "🚁";
     const linhas = [`${prefixo} *${item.titulo}*`];
 
-    if (item.resumo) linhas.push("", item.resumo);
+    // comentário da IA (2-3 frases, no tom do canal)
+    const comentario = String(item.comentario || item.resumo || "").trim();
+    if (comentario) linhas.push("", comentario);
 
-    linhas.push("", `🔗 ${linkFinal(item)}`);
+    // gancho: o que o leitor faz com a informação
+    linhas.push("", pub.gancho || "💬 Se você também aplica com drone, me conta aqui.");
+
+    const link = linkFinal(item);
+    if (link) linhas.push("", `🔗 ${link}`);
 
     const rodape = (pub.rodape || "Fonte: {fonte} | {data}")
         .replace("{fonte}", item.fonte)
@@ -84,4 +101,4 @@ function semResultado(motivo) {
     return `🔍 Varredura concluída — nada novo por enquanto.\n\n${motivo}\n\nTente de novo mais tarde ou mande "fontes" para ver o estado das fontes.`;
 }
 
-module.exports = { cardAprovacao, mensagemCanal, resumoFim, semResultado, dataCurta, horaAgora };
+module.exports = { cardAprovacao, mensagemCanal, resumoFim, semResultado, dataCurta, horaAgora, linkFinal };

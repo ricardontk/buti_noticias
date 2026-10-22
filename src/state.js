@@ -104,6 +104,7 @@ class State {
         this.data.publicados.unshift({
             titulo: item.titulo,
             link: item.link,
+            linkOriginal: item.linkOriginal || "",
             fonte: item.fonte,
             regiao: item.regiao,
             data: new Date().toISOString(),

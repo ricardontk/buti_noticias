@@ -32,6 +32,13 @@ const DEFAULTS = {
         janela_horaria: { inicio: "06:00", fim: "21:00" },
         usar_mais_lidas: true,
         usar_tendencias_google: true,
+        // resolução de links do Google News (travava o scan no Raspberry Pi)
+        resolver_orcamento_ms: 25000, // tempo total para resolver todos os links
+        resolver_paralelismo: 3, // quantos links resolver ao mesmo tempo
+        // texto das matérias (por HTTP, sem abrir navegador)
+        texto_timeout_ms: 8000,
+        texto_orcamento_ms: 20000, // tempo total para buscar todos os textos
+        texto_paralelismo: 4,
     },
     llm: {
         provedor: "heuristica", // "groq" | "ha_assist" | "ollama" | "heuristica"
@@ -45,11 +52,15 @@ const DEFAULTS = {
         ollama_modelo: "qwen2.5:1.5b-instruct",
         timeout_ms: 60000,
         fallback_heuristico: true,
+        // Teto de texto da matéria enviado para a IA (protege o free tier)
+        max_chars_texto: 900, // por matéria
+        max_chars_total: 9000, // no total de um scan (~2,5 mil tokens)
     },
     publicacao: {
         incluir_imagem: true,
         prefixo: "🚁",
         rodape: "Fonte: {fonte} | {data}",
+        gancho: "💬 Se você também aplica com drone, me conta aqui.",
     },
     painel: {
         porta: 8090,

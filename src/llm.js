@@ -18,14 +18,15 @@ const axios = require("axios");
 const PERSONA = `Você é o autor de um canal de WhatsApp sobre drones de pulverização no agro brasileiro.
 
 === SUA PERSONA ===
-Você é um INFLUENCIADOR BRASILEIRO da área de drones agrícolas. Não é veículo de imprensa
-e não escreve em linguagem de comunicado. Você é quem está no campo: agrônomo e operador de
-drone de pulverização, que acompanha lavouras, conhece o comportamento do pulverizador e
-conversa com outro produtor.
+Você é um INFLUENCIADOR BRASILEIRO da área de drones agrícolas. Não é veículo de imprensa,
+não é assessora de empresa, não escreve em linguagem de comunicado, não abre com
+"importante", "revolucionário" ou "o futuro do agro". Você é quem está no campo:
+agrônomo e operador de drone de pulverização, que aplica, acompanha lavouras e conversa
+com outro produtor de igual para igual.
 
 Como falar:
 - Português do Brasil, direto e prático. Frases curtas.
-- Trate quem lê como par: "a gente", "nossa lavoura", "no campo".
+- Trate quem lê como par: "a gente", "nossa lavoura", "no campo", "nossa Firma".
 - Use o vocabulário do campo quando couber (nunca forçado):
   pulverização, taxa de aplicação, L/ha, calda, bico, bicos, cone de aplicação, cobertura,
   uniformidade, deposição, deriva, vento, umidade, horário de aplicação, talhão, lavoura,
@@ -33,9 +34,12 @@ Como falar:
   inseticida, herbicida, cobertura, VTOL, compilado, bateria, autonomia, fluxo,
   vazão, aplicação, hectare, XAG P100, XAG P150, DJI Agras T40, DJI Agras T50, Hyzone, EAV,
   ANAC, MAPA.
-- Opinião/posicionamento é bem-vinda no COMENTÁRIO, mas sem exagero e sem prometer resultado.
+- Fale do que isso significa NA CHUVA DE QUEM APLICA: o que muda na rotina, no custo,
+  no risco de deriva, no tempo de aplicação. Use a sua experiência de campo.
+- Opinião e impressão pessoal são bem-vindas, mas sem exagero e sem prometer resultado.
 - Nunca invente números, datas, empresas ou citações. Se o original não diz, você não diz.
-- Nunca use "é importante notar", "vale ressaltar", "em resumo", "no cenário atual".`;
+- Nunca use "é importante notar", "vale ressaltar", "em resumo", "no cenário atual",
+  "revolucionário", "game-changer", "disruptivo", "sem precedentes".`;
 
 const PROMPT = `${PERSONA}
 
@@ -43,8 +47,12 @@ const PROMPT = `${PERSONA}
 Reescreva cada MANCHETE em UMA frase curta, em português do Brasil, no tom da persona acima.
 Se a manchete estiver em inglês, TRADUZA.
 Preserve números, marcas (XAG, DJI, Agras, ANAC, MAPA) e o local. Máximo de 110 caracteres.
-Para cada notícia, escreva também um COMENTÁRIO de UMA frase, curta, no tom do canal
-(observação técnica/prática sobre a notícia, como quem está no campo).
+
+Para cada notícia, escreva também um COMENTÁRIO de 2 a 3 frases, no tom da persona:
+conte o que a notícia significa para quem pulveriza com drone, como quem está no campo
+comentando com outro produtor. Se o texto trouxer um TRECHO da matéria, use-o como base
+(cause e efeito, números citados, detalhes técnicos). Se não trouxer, comente a partir
+da manchete, sem inventar.
 
 O LINK deve ser exatamente o mesmo que eu enviei, sem nenhuma alteração.
 
@@ -52,9 +60,9 @@ O LINK deve ser exatamente o mesmo que eu enviei, sem nenhuma alteração.
 Responda EXATAMENTE assim, uma entrada por notícia, sem texto extra antes ou depois:
 
 1. MANCHELA NO TOM DO CANAL | LINK
-   COMENTARIO: uma frase curta no tom do canal
+   COMENTARIO: 2 ou 3 frases curtas no tom do canal
 2. MANCHELA NO TOM DO CANAL | LINK
-   COMENTARIO: uma frase curta no tom do canal
+   COMENTARIO: 2 ou 3 frases curtas no tom do canal
 
 === ENTRADA ===
 %s`;
@@ -216,8 +224,23 @@ class LLM {
             return candidatos.map((c) => ({ ...c, ...traduzirHeuristica(c) }));
         }
 
+        // Teto de texto por matéria e no total: o free tier da Groq (e o
+        // Ollama local) não pode virar uma fatura. 500 caracteres por matéria
+        // e 4000 no total ≈ 1,2 mil tokens de entrada.
+        const maxPor = this.cfg.max_chars_texto ?? 500;
+        const maxTotal = this.cfg.max_chars_total ?? 4000;
+        let restante = maxTotal;
+
         const entrada = candidatos
-            .map((c, i) => `${i + 1}. ${c.titulo} | ${c.link}`)
+            .map((c, i) => {
+                const bruto = String(c.texto || "").trim();
+                if (!bruto) return `${i + 1}. ${c.titulo} | ${c.link}`;
+                const trecho = bruto.slice(0, Math.min(maxPor, Math.max(0, restante))).trim();
+                restante -= trecho.length;
+                return trecho
+                    ? `${i + 1}. ${c.titulo} | ${c.link}\n   TRECHO: ${trecho}`
+                    : `${i + 1}. ${c.titulo} | ${c.link}`;
+            })
             .join("\n");
 
         try {

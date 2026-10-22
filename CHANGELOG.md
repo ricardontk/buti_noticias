@@ -2,6 +2,43 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.5.0
+
+### Corrigido
+
+- **O painel e a mensagem publicada usavam links diferentes**: o painel mostrava
+  o link resolvido, mas a mensagem publicava o campo `linkReal` (que nunca
+  existiu) e caía no link quebrado. Agora os dois usam a mesma função
+  (`linkFinal`), que nunca devolve `chrome-error://` nem link inválido.
+- **O link publicado saía como `chrome-error://chromewebdata/`**: quando a
+  navegação falha, o Chromium devolve a página de erro e o bot publicava essa
+  URL. Agora só links http(s) são aceitos — quando a resolução falha, fica o
+  link original do feed.
+- **A varredura travava em "Resolvendo links"**: cada link do Google News abria
+  uma aba do Chromium, uma de cada vez, com 25 s de timeout (no Raspberry Pi 4,
+  isso passava de 3 minutos). Agora:
+  - o link é resolvido por **HTTP** (segue o redirect) e, quando o redirect é por
+    JavaScript, a URL original é extraída do HTML — **sem abrir navegador**;
+  - o navegador só é usado como último recurso, com `domcontentloaded` e 10 s;
+  - os links são resolvidos **3 ao mesmo tempo**, com **orçamento de tempo
+    total** (25 s): o que não der tempo fica com o link original;
+  - o progresso aparece no log (`3/8 resolvido(s)`).
+
+### Adicionado
+
+- **O texto da matéria agora vai para a IA**: o bot busca o conteúdo por HTTP
+  (sem navegador) e manda um trecho junto com o título, então o COMENTÁRIO
+  publicado fala da notícia de verdade e não só da manchete.
+- **Publicação mais "de influencer"**: o COMENTÁRIO passou de 1 para 2-3 frases,
+  a persona da IA ficou mais de campo (fala do que muda na rotina de quem
+  pulveriza, sem linguagem de comunicado) e a mensagem ganhou uma linha de
+  engajamento (`publicacao.gancho`, configurável).
+- Tetos para não estourar o free tier da Groq: `llm.max_chars_texto` (900 por
+  matéria) e `llm.max_chars_total` (9000 no total) — cerca de 2,5 mil tokens de
+  entrada por varredura.
+- `scripts/teste-resolver.js`, `scripts/teste-artigo.js` e `scripts/teste-link.js`
+  (entram no `npm run verificar`).
+
 ## 1.4.0
 
 ### Corrigido
