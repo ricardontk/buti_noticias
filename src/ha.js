@@ -96,7 +96,10 @@ class HA {
             if (!this.avisoFalha) {
                 console.warn(
                     `⚠️ Não consegui falar com o Home Assistant (${r.status || r.erro}).` +
-                        (this.token ? "" : " (sem SUPERVISOR_TOKEN — confira 'hassio_api: true' no config.yaml do app)")
+                        ` token=${this.token ? "sim" : "não"} | url=${this.base}` +
+                        (r.status === 401
+                            ? " — confira 'homeassistant_api: true' no config.yaml do app."
+                            : "")
                 );
                 this.avisoFalha = true;
             }
@@ -105,7 +108,10 @@ class HA {
         this.conectado = true;
         this.avisoFalha = false;
         const versao = r.json?.version || "?";
-        console.log(`🏠 Home Assistant conectado (v${versao})${this.token ? "" : " — sem token"}.`);
+        console.log(
+            `🏠 Home Assistant conectado (v${versao})` +
+                (this.token ? " — com token." : " — sem token.")
+        );
         await this._detectarDispositivos();
         return true;
     }

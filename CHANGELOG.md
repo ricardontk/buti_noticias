@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.3.2
+
+### Corrigido
+
+- A integração com o Home Assistant retornava **401**: a chave errada estava no
+  `config.yaml`. `hassio_api` libera a API do *Supervisor*; quem libera o proxy
+  `/core/api` do Home Assistant é `homeassistant_api`. Agora está
+  `homeassistant_api: true` (e `hassio_api: false`, que não usamos).
+- O log agora mostra se o token foi encontrado e lembra de conferir a chave
+  quando a resposta for 401.
+
 ## 1.3.1
 
 ### Corrigido
