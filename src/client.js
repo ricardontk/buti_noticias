@@ -285,24 +285,23 @@ class WhatsAppClient {
             if (!this._ehErroDeInjecao(err)) throw err;
             this.falhasConsecutivas += 1;
             console.warn(
-                `⚠️ Falha de injeção no WhatsApp (${err.message}) — tentativa ${this.falhasConsecutivas}/${this.maxFalhas}.`
+                `⚠️ Falha de injeção no WhatsApp (${err.message}) — tentativa ${this.falhasConsecutivas}.`
             );
             console.warn(
                 "   💡 A aba do WhatsApp Web se desanexou (recarregou ou caiu). Se isso repetir muito, veja a memória do HA."
             );
 
-            // Depois de várias falhas, a sessão salva está corrompida:
-            // descarta e pede um QR Code novo.
-            if (this.falhasConsecutivas >= this.maxFalhas) {
-                this.falhasConsecutivas = 0;
-                await this.reiniciar(true);
-                throw new Error("sessão reiniciada com QR novo — conclua a conexão no painel");
-            }
-
             try {
+                // reinicia a sessão mantendo o login salvo (não pede QR de novo)
                 await this.reiniciar();
             } catch (falha) {
                 console.error(`❌ Não consegui reiniciar a sessão: ${falha.message}`);
+                // Se o reinício foi barrado pelo freio (recente), é só esperar:
+                // não vale a pena descartar a sessão salva.
+                if (/reinício recente/i.test(falha.message || "")) throw err;
+                // sem saída de verdade: o login salvo pode estar ruim -> QR novo
+                console.warn("🔑 Vou pedir um QR Code novo (a sessão salva não voltou).");
+                await this._pedirNovoQR();
                 throw err;
             }
             const r = await this.client.sendMessage(jid, texto, opcoes);

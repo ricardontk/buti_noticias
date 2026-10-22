@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.6.5
+
+### Corrigido
+
+- **O bot pedia QR Code novo demais**: uma aba do WhatsApp Web que cai não é
+  problema de sessão. Agora a falha de injeção **reinicia a sessão mantendo o
+  login salvo** (sem QR novo). O QR Code só é pedido quando:
+  - o **WhatsApp encerra a sessão** (LOGOUT/CONFLICT/UNPAIRED), ou
+  - o reinício falha de verdade (não foi só o freio anti-loop).
+- Reiniciar o app normalmente **não** pede QR: a sessão fica salva no volume
+  `/share/bot_noticias/.wwebjs_auth`.
+
 ## 1.6.4
 
 ### Corrigido

@@ -114,9 +114,13 @@ const cfg = {
     }
     checar("segundo reinício é barrado pelo freio", !!erro, erro?.message?.slice(0, 50));
 
-    // 4) depois de N falhas: pede QR novo (descarta a sessão salva)
-    const semFreio = new WhatsAppClient({ ...cfg, intervalo_reinicio_ms: 0, max_falhas_injecao: 3 });
-    let forcado = false;
+    // 4) falha de injeção: reinicia a sessão MANTENDO o login salvo
+    //    (uma aba que caiu não pode fazer o bot pedir QR de novo)
+    const semFreio = new WhatsAppClient({ ...cfg, intervalo_reinicio_ms: 0 });
+    let pediuQRNaFalha = false;
+    semFreio._pedirNovoQR = async function () {
+        pediuQRNaFalha = true;
+    };
     let reinicios = 0;
     semFreio.client = {
         async sendMessage() {
@@ -125,24 +129,39 @@ const cfg = {
     };
     semFreio.reiniciar = async function (forcarQR) {
         reinicios += 1;
-        if (forcarQR) {
-            forcado = true;
-            return;
-        }
+        if (forcarQR) throw new Error("não deveria forçar QR aqui");
         this.client = {
             async sendMessage() {
-                throw new Error("Cannot read properties of undefined (reading 'getChat')");
+                return "enviado";
             },
         };
     };
-    for (let i = 0; i < 3; i += 1) {
-        try {
-            await semFreio.enviarMensagem("5511999999999@c.us", "olá");
-        } catch (_) {
-            /* esperado */
-        }
+    const r3 = await semFreio.enviarMensagem("5511999999999@c.us", "olá");
+    checar("falha de injeção reinicia sem pedir QR", pediuQRNaFalha === false);
+    checar("e o envio é refeito", r3 === "enviado", `${reinicios} reinício(s)`);
+
+    // 5) se o reinício falhar de verdade, aí sim pede QR novo
+    const semSaida = new WhatsAppClient({ ...cfg, intervalo_reinicio_ms: 0 });
+    let pediuQRFinal = false;
+    semSaida._pedirNovoQR = async function () {
+        pediuQRFinal = true;
+    };
+    semSaida.client = {
+        async sendMessage() {
+            throw new Error("Cannot read properties of undefined (reading 'getChat')");
+        },
+    };
+    semSaida.reiniciar = async function () {
+        throw new Error("reinício falhou");
+    };
+    erro = null;
+    try {
+        await semSaida.enviarMensagem("5511999999999@c.us", "olá");
+    } catch (e) {
+        erro = e;
     }
-    checar("após 3 falhas pede QR novo", forcado === true, `${reinicios} reinício(s)`);
+    checar("sem saída, pede QR novo", pediuQRFinal === true);
+    checar("e propaga o erro original", !!erro);
 
     // 5) LOGOUT do WhatsApp pede QR novo
     const comLogout = new WhatsAppClient(cfg);
