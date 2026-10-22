@@ -144,6 +144,31 @@ const cfg = {
     }
     checar("após 3 falhas pede QR novo", forcado === true, `${reinicios} reinício(s)`);
 
+    // 5) LOGOUT do WhatsApp pede QR novo
+    const comLogout = new WhatsAppClient(cfg);
+    let pediuQR = false;
+    comLogout._pedirNovoQR = async function () {
+        pediuQR = true;
+    };
+    comLogout.client = { on() {} };
+    comLogout.registrar({});
+    comLogout.client.emit = (evento, dado) => {
+        if (evento === "disconnected") comLogout.handlers; // noop
+    };
+    // dispara o listener registrado
+    const ouvinte = comLogout.client.on;
+    let handlerDesconectado = null;
+    comLogout.client.on = (evento, fn) => {
+        if (evento === "disconnected") handlerDesconectado = fn;
+        return ouvinte.call(comLogout.client, evento, fn);
+    };
+    comLogout.registrar({});
+    if (handlerDesconectado) handlerDesconectado("LOGOUT");
+    await new Promise((r) => setTimeout(r, 30));
+    checar("LOGOUT pede QR novo", pediuQR === true);
+    checar("reconhece LOGOUT", comLogout._ehLogout("LOGOUT") === true);
+    checar("não confunde desconexão comum", comLogout._ehLogout("NAVIGATION") === false);
+
     console.log("\nTudo certo.");
     process.exit(0);
 })();

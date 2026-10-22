@@ -28,6 +28,7 @@ class WhatsAppClient {
         this.intervaloReinicioMs = cfg.intervalo_reinicio_ms ?? 60000; // freio anti-loop
         this.falhasConsecutivas = 0; // falhas de injeção em sequência
         this.maxFalhas = cfg.max_falhas_injecao ?? 3; // depois disso: QR novo
+        this.pedindoQR = false; // já estou pedindo um QR novo?
         this._carregarLidCache();
 
         const puppeteerConfig = {
@@ -108,8 +109,9 @@ class WhatsAppClient {
         c.on("qr", (qr) => {
             this.qrAtual = qr;
             this.conectado = false;
-            console.log("\n📱 Escaneie o QR Code com o WhatsApp do celular:");
-            console.log("   (também disponível no painel web do bot)");
+            console.log("\n📱 QR Code novo — escaneie com o WhatsApp do celular:");
+            console.log("   (WhatsApp → Aparelhos conectados → Conectar com número de telefone → Conectar usando este código)");
+            console.log("   Também aparece no painel web do bot.");
             qrcode.generate(qr, { small: true });
             const destino = path.join(path.dirname(this.cfg.caminhos.estado), "qrcode.png");
             QRCodeImage.toFile(destino, qr, { margin: 2, width: 500 }, (err) => {
@@ -125,6 +127,13 @@ class WhatsAppClient {
         c.on("disconnected", (r) => {
             this.conectado = false;
             console.warn(`🔌 [DESCONECTADO] ${r}`);
+            // LOGOUT = o WhatsApp encerrou/desconectou este dispositivo.
+            // Não adianta reiniciar: a credencial salva não vale mais, então
+            // pedimos um QR Code novo para você escanear.
+            if (this._ehLogout(r)) {
+                console.warn("🔑 Sessão encerrada pelo WhatsApp — vou pedir um QR Code novo.");
+                this._pedirNovoQR();
+            }
         });
         c.on("auth_failure", (m) => console.error("❌ [FALHA SESSÃO]", m));
 
@@ -177,6 +186,27 @@ class WhatsAppClient {
         return /WWebJS|getChat|Cannot read properties of undefined|detached Frame|detached frame/i.test(
             msg
         );
+    }
+
+    /** O WhatsApp encerrou a sessão (logout/conflict/desconexão definitiva)? */
+    _ehLogout(motivo) {
+        const m = String(motivo || "").toUpperCase();
+        return /LOGOUT|CONFLICT|UNPAIRED|UNLINKED|REVOKED/.test(m);
+    }
+
+    /** Descarta a credencial salva e espera um QR Code novo. */
+    async _pedirNovoQR() {
+        if (this.pedindoQR) return;
+        this.pedindoQR = true;
+        try {
+            // dá um tempo para a biblioteca assentar (a página está navegando)
+            await new Promise((r) => setTimeout(r, 5000));
+            await this.reiniciar(true);
+        } catch (err) {
+            console.error(`❌ Não consegui pedir o QR novo: ${err.message}`);
+        } finally {
+            this.pedindoQR = false;
+        }
     }
 
     /** Recria o cliente do WhatsApp (mantém a sessão salva no volume). */

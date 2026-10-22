@@ -16,6 +16,11 @@ Todas as mudanças relevantes deste app.
 
 ### Corrigido
 
+- **"🔌 [DESCONECTADO] LOGOUT"**: o WhatsApp encerrou a sessão deste
+  dispositivo. Antes, o bot ficava tentando usar a credencial morta (daí o
+  "Execution context was destroyed" e o "getChat" quebrando). Agora, ao detectar
+  LOGOUT/CONFLICT/UNPAIRED, ele **descarta a credencial salva e pede um QR Code
+  novo** — que aparece no painel web e é salvo em `qrcode.png`.
 - **Vigia do app**: se o WhatsApp ficar desconectado por mais de 15 minutos
   (aba caiu e não voltou), o app sai com erro — o Supervisor reinicia ele limpo
   e o bot volta a funcionar sozinho, sem depender de você.

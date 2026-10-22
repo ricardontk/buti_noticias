@@ -1,5 +1,5 @@
 name: "Bot de Notícias - Drones de Pulverização"
-version: "1.6.2"
+version: "1.6.3"
 slug: "bot_noticias"
 description: "Coleta notícias de drones de pulverização (Brasil e mundo), traduz e reescreve no tom do canal, e publica no canal do WhatsApp depois da sua aprovação."
 startup: application

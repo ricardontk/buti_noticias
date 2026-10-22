@@ -216,6 +216,8 @@ sensores `rest`, scripts e dashboard prontos. **Esse modelo exige** editar o
 | "Já existe uma varredura em andamento" | Espere terminar — o log mostra o tempo de cada varredura. |
 | Publicação falhou | O ID do canal pode ter mudado. Use `scripts/listar_canais.js` (dentro do repositório) para conferir. |
 | Bot ignorando suas mensagens | Só o número em `meu_numero` conversa com ele. |
+| "Sessão encerrada pelo WhatsApp" (LOGOUT) | O WhatsApp desconectou este dispositivo. O bot apaga a credencial e gera um **QR Code novo** — abra o painel e escaneie de novo (Aparelhos conectados → Conectar usando este código). |
+| "Falha de injeção no WhatsApp" | A aba do WhatsApp Web caiu/recarregou. O bot reinicia a sessão sozinho. Se repetir a cada mensagem, o problema é memória do RPi 4. |
 
 Os logs ficam em **Ajustes → Aplicativos → Bot de Notícias → Registros** (ou
 `/share/bot_noticias/`).
