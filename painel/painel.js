@@ -23,6 +23,9 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // itens que já estão sendo processados (evita dois cliques no mesmo item)
+  const emProcessamento = new Set();
+
   /** Liga um evento só se o elemento existir (HTML e JS podem estar defasados). */
   function ligar(id, evento, fn) {
     const el = $(id);
@@ -259,6 +262,9 @@
   }
 
   async function agirNaFila(id, acao, botao) {
+    // trava: um clique por item (evita dois cliques rápidos)
+    if (emProcessamento.has(id)) return;
+    emProcessamento.add(id);
     const html = botao.innerHTML;
     botao.disabled = true;
     botao.innerHTML = '<span class="spin"></span>';
@@ -271,6 +277,7 @@
     } catch (e) {
       toast("Falha ao agir na fila.");
     } finally {
+      emProcessamento.delete(id);
       botao.innerHTML = html;
       botao.disabled = false;
       carregarFila();

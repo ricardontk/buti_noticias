@@ -2,17 +2,26 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.6.4
+
 ### Corrigido
 
-- **A aba do WhatsApp Web "se desanexa"** (`Attempted to use detached Frame`):
-  é a causa real do erro de injeção — a página recarrega ou cai e a biblioteca
-  fica com a referência velha. Melhorias:
-  - a recuperação agora **espera a sessão ficar pronta** (evento `ready`) antes de
-    reenviar, em vez de só recarregar a página;
-  - o erro "detached Frame" também é reconhecido como falha de injeção;
-  - **freio anti-loop**: dois reinícios em menos de 1 minuto não são permitidos
-    (evita o bot ficar reiniciando e queimando CPU/RAM do RPi 4);
-  - o log dá a dica de que, se repetir muito, o problema pode ser memória.
+- **Dois cliques publicavam a mesma notícia duas vezes**: era uma corrida — as
+  duas requisições chegavam juntas, viam o item como "aguardando" e as duas
+  publicavam. Agora o item é travado como `publicando` **antes** do envio (no
+  servidor), a segunda tentativa é recusada com "esta notícia já está sendo
+  publicada", e o painel também trava o botão.
+- Se a publicação falhar, o item volta a poder ser tentado de novo: o painel
+  aceita republicar uma notícia que deu erro (status `falhou`).
+- **"Publicar" no painel não achava o item** quando a fila era antiga (criada
+  antes dos ids): o painel manda o número da ordem, e a busca usava a posição
+  na lista (publicava o item errado). Agora busca pela **ordem** ✓.
+- Quando o WhatsApp está desconectado, o painel mostra "📱 WhatsApp
+  desconectado — escaneie o QR Code no painel e tente de novo" em vez da
+  mensagem técnica do Puppeteer.
+- `scripts/teste-acao-fila.js` entra no `npm run verificar`.
+
+## 1.6.3
 
 ### Corrigido
 
@@ -27,6 +36,20 @@ Todas as mudanças relevantes deste app.
 - **Sessão quebrada sem saída**: depois de 3 falhas de injeção seguidas, o bot
   **descarta a credencial salva e pede um QR Code novo** (o arquivo
   `qrcode.png` é gerado de novo e aparece no painel para você escanear).
+
+## 1.6.2
+
+### Corrigido
+
+- **A aba do WhatsApp Web "se desanexa"** (`Attempted to use detached Frame`):
+  é a causa real do erro de injeção — a página recarrega ou cai e a biblioteca
+  fica com a referência velha. Melhorias:
+  - a recuperação agora **espera a sessão ficar pronta** (evento `ready`) antes de
+    reenviar, em vez de só recarregar a página;
+  - o erro "detached Frame" também é reconhecido como falha de injeção;
+  - **freio anti-loop**: dois reinícios em menos de 1 minuto não são permitidos
+    (evita o bot ficar reiniciando e queimando CPU/RAM do RPi 4);
+  - o log dá a dica de que, se repetir muito, o problema pode ser memória.
 
 ## 1.6.0
 

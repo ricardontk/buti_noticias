@@ -40,11 +40,16 @@ class Queue {
         return this.enviarProximo();
     }
 
-    /** Acha um item da fila pelo id (ou pela posição). */
+    /** Acha um item da fila pelo id (ou pela ordem). */
     achar(id) {
         const fila = this.state.fila;
         let item = fila.find((i) => i.id && String(i.id) === String(id));
-        if (!item && /^\d+$/.test(String(id))) item = fila[parseInt(id, 10)];
+        // itens antigos (sem id) — procura pela ordem que aparece no painel
+        if (!item && /^\d+$/.test(String(id))) {
+            const ordem = parseInt(id, 10);
+            item = fila.find((i) => i.ordem === ordem);
+            if (!item) item = fila.find((i) => i.status === "aguardando" && i.ordem === ordem);
+        }
         return item;
     }
 
@@ -57,7 +62,13 @@ class Queue {
     async agir(id, acao) {
         const item = this.achar(id);
         if (!item) return { ok: false, erro: "item não encontrado na fila" };
-        if (item.status !== "aguardando") {
+        if (item.status === "publicando") {
+            return { ok: false, erro: "esta notícia já está sendo publicada" };
+        }
+        if (item.status === "publicada") {
+            return { ok: false, erro: "esta notícia já foi publicada" };
+        }
+        if (item.status !== "aguardando" && item.status !== "falhou") {
             return { ok: false, erro: `este item já está ${item.status}` };
         }
         const eraAtual = item === this.atual;
@@ -65,6 +76,16 @@ class Queue {
         if (acao === "publicar") {
             const ok = await this.publicarItem(item);
             if (eraAtual) await this.enviarProximo();
+            if (!ok.ok) {
+                // mensagem que faz sentido para quem está olhando o painel
+                const causa = String(ok.erro || "");
+                if (/not authenticated|not logged|logged out|session|disconnected|ECONN/i.test(causa)) {
+                    return {
+                        ok: false,
+                        erro: "📱 WhatsApp desconectado — escaneie o QR Code no painel e tente de novo.",
+                    };
+                }
+            }
             return { ok: ok.ok, erro: ok.erro, item: { id: item.id, status: item.status } };
         }
 
@@ -188,6 +209,13 @@ class Queue {
     }
 
     async publicarItem(item) {
+        // Trava na hora: dois cliques quase juntos (ou painel + WhatsApp ao
+        // mesmo tempo) não podem publicar a mesma notícia duas vezes.
+        if (item.status === "publicando") {
+            return { ok: false, erro: "esta notícia já está sendo publicada" };
+        }
+        item.status = "publicando";
+
         const texto = mensagemCanal(item, this.cfg);
         const resultado = await this.publisher.publicar(item, texto);
         if (resultado.ok) {
@@ -198,6 +226,7 @@ class Queue {
         } else {
             item.status = "falhou";
             this.state.save();
+            console.error(`❌ Falha ao publicar "${item.titulo}": ${resultado.erro || ""}`);
         }
         return resultado;
     }
