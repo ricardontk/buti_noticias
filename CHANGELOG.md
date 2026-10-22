@@ -2,6 +2,35 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.4.0
+
+### Corrigido
+
+- **O painel web parou de carregar as informações** quando se define uma senha
+  (`painel_token`): o navegador pede o `painel.js` sem a senha na URL, o
+  servidor bloqueava, e a página ficava só com o HTML. Agora os arquivos do
+  painel são servidos **sem** senha (não têm segredo) e a API é que pede a
+  senha — o painel mostra um campo para digitá-la e lembra no navegador.
+- **O painel dentro do Home Assistant não carregava nada**: o `painel.js` era
+  carregado por caminho absoluto (`/painel.js`), que escapa do ingress e vai
+  parar na API do Home Assistant em vez do bot. Agora o script é carregado com
+  o prefixo do ingress, derivado do próprio endereço da página.
+- O painel não quebra mais se o HTML estiver defasado no navegador (elementos
+  novos ausentes) e o servidor manda `Cache-Control: no-store` para o HTML/JS.
+- Aviso `DEP0169` (url.parse) eliminado: o servidor agora usa a API padrão de
+  URL.
+
+### Mudança
+
+- Removida a opção `painel_porta`: a porta do painel vem do `config.json`
+  (`painel.porta`) e o ingress da porta 8090. Menos um lugar para configurar.
+
+### Adicionado
+
+- `AGENTS.md` com as regras do projeto e `npm run verificar`, que valida o
+  `config.yaml` contra o schema do Supervisor e roda todos os testes antes de
+  publicar.
+
 ## 1.3.2
 
 ### Corrigido

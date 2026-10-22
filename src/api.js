@@ -21,7 +21,6 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const url = require("url");
 
 const PAINEL_DIR = path.join(__dirname, "..", "painel");
 
@@ -70,14 +69,21 @@ class Api {
             return res.end("não encontrado");
         }
         const ext = path.extname(nome).toLowerCase();
-        res.writeHead(200, { "Content-Type": TIPOS[ext] || "application/octet-stream" });
+        res.writeHead(200, {
+            "Content-Type": TIPOS[ext] || "application/octet-stream",
+            // HTML e JS sempre frescos: se o navegador guardar uma versão
+            // antiga do painel, o script pode não achar os elementos novos.
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+        });
         res.end(fs.readFileSync(caminho));
     }
 
     async _tratar(req, res) {
-        const parsed = url.parse(req.url, true);
+        // URL padrão (WHATWG) em vez de url.parse, que está obsoleto.
+        const parsed = new URL(req.url, "http://localhost");
         const pathname = parsed.pathname;
-        const query = parsed.query;
+        const query = {};
+        for (const [chave, valor] of parsed.searchParams) query[chave] = valor;
 
         if (req.method === "OPTIONS") {
             res.writeHead(204, {
@@ -88,7 +94,10 @@ class Api {
             return res.end();
         }
 
-        if (!this._autorizado(req, pathname, query)) {
+        // Os arquivos do painel não têm segredo: são servidos sempre, para que
+        // a página apareça mesmo sem token. Quem exige token é a API.
+        const estaticos = ["/", "/index.html", "/painel.js", "/favicon.ico"];
+        if (!estaticos.includes(pathname) && !this._autorizado(req, pathname, query)) {
             return this._json(res, { erro: "não autorizado" }, 401);
         }
 

@@ -2,13 +2,60 @@
 (function () {
   "use strict";
 
-  const token = new URLSearchParams(location.search).get("token") || "";
-  const api = (caminho, opcoes) =>
-    fetch(caminho + (token ? (caminho.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token) : ""), opcoes);
+  const CHAVE_TOKEN = "bot_noticias_token";
+
+  /*
+   * Base das URLs da API.
+   *
+   * Aberto direto (http://IP:8090/) a base é "".
+   * Dentro do Home Assistant (ingress) a página vem de
+   * /api/hassio_ingress/<token> — os caminhos absolutos (/api/status)
+   * escapingariam o ingress e cairiam na API do Home Assistant, não no bot.
+   * Então derivamos a base do próprio endereço da página.
+   */
+  const BASE = (function () {
+    const m = location.pathname.match(/^(.*\/api\/hassio_ingress\/[^/]+)/);
+    return m ? m[1] : "";
+  })();
+
+  const tokenDaUrl = new URLSearchParams(location.search).get("token") || "";
+  let token = tokenDaUrl || localStorage.getItem(CHAVE_TOKEN) || "";
 
   const $ = (id) => document.getElementById(id);
+
+  /** Liga um evento só se o elemento existir (HTML e JS podem estar defasados). */
+  function ligar(id, evento, fn) {
+    const el = $(id);
+    if (el) el.addEventListener(evento, fn);
+  }
+
+  /** Chamada na API: manda o token e, se der 401, pede a senha. */
+  async function api(caminho, opcoes) {
+    const sep = caminho.includes("?") ? "&" : "?";
+    const url = BASE + caminho + (token ? sep + "token=" + encodeURIComponent(token) : "");
+    const r = await fetch(url, opcoes);
+    if (r.status === 401) {
+      pedirSenha();
+      throw new Error("nao autorizado");
+    }
+    return r;
+  }
+
+  function pedirSenha() {
+    const card = $("cardSenha");
+    if (card) card.style.display = "block";
+    const st = $("stPronto");
+    if (st) st.textContent = "🔴 senha do painel";
+  }
+
+  function guardarToken(valor) {
+    localStorage.setItem(CHAVE_TOKEN, valor);
+    location.reload();
+  }
+
   const toast = (msg) => {
     const t = $("toast");
+    if (!t) return;
     t.textContent = msg;
     t.classList.add("on");
     clearTimeout(t._t);
@@ -18,54 +65,58 @@
   function dt(iso) {
     if (!iso) return "nunca";
     const d = new Date(iso);
-    return isNaN(d) ? "nunca" : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    return isNaN(d)
+      ? "nunca"
+      : d.toLocaleString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+  }
+
+  function esc(texto) {
+    return String(texto == null ? "" : texto).replace(
+      /[&<>"']/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+    );
   }
 
   async function carregarStatus() {
     try {
       const r = await api("/api/status");
       const s = await r.json();
-      $("stPronto").textContent = s.pronto ? "🟢 pronto" : "🟡 iniciando";
-      $("stWhats").textContent = s.whatsapp?.conectado ? "🟢 conectado" : "🟡 aguardando QR";
-      $("stIA").textContent = s.ia ? `${s.ia.provedor} / ${s.ia.modelo}` : "—";
-      if (s.ia && s.ia.degradado) $("stIA").textContent += " (degradado)";
+      const set = (id, valor) => {
+        const el = $(id);
+        if (el) el.textContent = valor;
+      };
+      set("stPronto", s.pronto ? "🟢 pronto" : "🟡 iniciando");
+      set("stWhats", s.whatsapp?.conectado ? "🟢 conectado" : "🟡 aguardando QR");
+      set("stIA", s.ia ? `${s.ia.provedor} / ${s.ia.modelo}` : "—");
+      if (s.ia && s.ia.degradado) set("stIA", `${s.ia.provedor} / ${s.ia.modelo} (degradado)`);
       const canais = s.canais || (s.canal_id ? [s.canal_id] : []);
-      $("stCanais").textContent = canais.length ? `${canais.length} · ${canais[0]}` : "—";
-      if (s.modo_publicacao) $("stCanais").title = `modo: ${s.modo_publicacao}`;
-      $("stVarredura").textContent = dt(s.ultima_varredura);
-      $("stPublicacao").textContent = dt(s.ultima_publicacao);
-      $("stFila").textContent = s.fila || 0;
-      $("stStats").textContent = `${s.stats?.publicadas || 0} / ${s.stats?.puladas || 0}`;
+      set("stCanais", canais.length ? `${canais.length} · ${canais[0]}` : "—");
+      set("stVarredura", dt(s.ultima_varredura));
+      set("stPublicacao", dt(s.ultima_publicacao));
+      set("stFila", s.fila || 0);
+      set("stStats", `${s.stats?.publicadas || 0} / ${s.stats?.puladas || 0}`);
+      const card = $("cardSenha");
+      if (card) card.style.display = "none";
     } catch (e) {
-      $("stPronto").textContent = "🔴 sem conexão";
-    }
-  }
-
-  async function carregarQR() {
-    const card = $("cardQR");
-    const box = $("qrBox");
-    try {
-      const r = await api("/api/qr");
-      const d = await r.json();
-      if (d.conectado || !d.qr) {
-        card.style.display = "none";
-        return;
-      }
-      card.style.display = "block";
-      box.innerHTML = `<img src="${d.qr}" alt="QR Code do WhatsApp" />`;
-    } catch (e) {
-      box.textContent = "não consegui carregar o código";
+      const st = $("stPronto");
+      if (st && e.message !== "nao autorizado") st.textContent = "🔴 sem conexão";
     }
   }
 
   async function carregarModelos() {
     const box = $("listaModelos");
+    if (!box) return;
     box.textContent = "Carregando…";
     try {
       const r = await api("/api/modelos");
       const d = await r.json();
-      if (!d.ok) {
-        box.innerHTML = `<span style="color:#e8a3a3">⚠️ ${d.erro || "erro"}</span>`;
+      if (d.ok === false) {
+        box.innerHTML = `<span style="color:#e8a3a3">⚠️ ${esc(d.erro || "erro")}</span>`;
         return;
       }
       if (!d.modelos || !d.modelos.length) {
@@ -77,19 +128,22 @@
           const extras = [m.contexto ? `${Math.round(m.contexto / 1000)}k ctx` : null, m.tamanho, m.nome]
             .filter(Boolean)
             .join(" · ");
-          return `<li><span class="tag">${d.provedor}</span><code>${m.id}</code>${extras ? `<div class="mut">${extras}</div>` : ""}</li>`;
+          return `<li><span class="tag">${esc(d.provedor)}</span><code>${esc(m.id)}</code>${
+            extras ? `<div class="mut">${esc(extras)}</div>` : ""
+          }</li>`;
         })
         .join("");
     } catch (e) {
-      box.textContent = "erro ao carregar";
+      box.textContent = e.message === "nao autorizado" ? "" : "erro ao carregar";
     }
   }
 
   async function carregarUltimas() {
+    const ul = $("listaUltimas");
+    if (!ul) return;
     try {
       const r = await api("/api/ultimas");
       const d = await r.json();
-      const ul = $("listaUltimas");
       if (!d.ultimas || !d.ultimas.length) {
         ul.innerHTML = '<li class="mut">Nada publicado ainda.</li>';
         return;
@@ -98,9 +152,9 @@
         .map(
           (p) => `<li>
             <span class="tag ${p.regiao === "BR" ? "br" : "mundo"}">${p.regiao === "BR" ? "BR" : "Mundo"}</span>
-            <b>${p.titulo}</b>
-            <div class="mut">${p.fonte} · ${dt(p.data)}</div>
-            <a href="${p.link}" target="_blank" rel="noopener">abrir notícia</a>
+            <b>${esc(p.titulo)}</b>
+            <div class="mut">${esc(p.fonte)} · ${dt(p.data)}</div>
+            <a href="${esc(p.link)}" target="_blank" rel="noopener">abrir notícia</a>
           </li>`
         )
         .join("");
@@ -110,40 +164,44 @@
   }
 
   async function carregarFontes() {
+    const ul = $("listaFontes");
+    if (!ul) return;
     try {
       const r = await api("/api/fontes");
       const d = await r.json();
-      const ul = $("listaFontes");
       ul.innerHTML = (d.fontes || [])
-        .map((f) => `<li><b>${f.nome}</b><div class="mut">${f.regiao} · <a href="${f.url}" target="_blank" rel="noopener">feed</a></div></li>`)
+        .map(
+          (f) =>
+            `<li><b>${esc(f.nome)}</b><div class="mut">${esc(f.regiao)} · <a href="${esc(f.url)}" target="_blank" rel="noopener">feed</a></div></li>`
+        )
         .join("");
     } catch (e) {
       /* silencioso */
     }
   }
 
-  async function disparar(rota, rotulo) {
-    const b = rota === "/api/buscar" ? $("btnBuscar") : $("btnMaisLidas");
-    const html = b.innerHTML;
-    b.disabled = true;
-    b.innerHTML = '<span class="spin"></span> Buscando…';
+  async function carregarQR() {
+    const card = $("cardQR");
+    const box = $("qrBox");
+    if (!card || !box) return;
     try {
-      await api(rota, { method: "POST" });
-      toast(`${rotulo}: varredura iniciada. A aprovação chega no seu WhatsApp.`);
+      const r = await api("/api/qr");
+      const d = await r.json();
+      if (d.conectado || !d.qr) {
+        card.style.display = "none";
+        return;
+      }
+      card.style.display = "block";
+      box.innerHTML = `<img src="${d.qr}" alt="QR Code do WhatsApp" />`;
     } catch (e) {
-      toast("Falha ao disparar a varredura.");
-    } finally {
-      setTimeout(() => {
-        b.disabled = false;
-        b.innerHTML = html;
-        carregarStatus();
-      }, 2500);
+      /* silencioso */
     }
   }
 
   async function carregarFila() {
     const card = $("cardFila");
     const box = $("filaItens");
+    if (!card || !box) return;
     try {
       const r = await api("/api/fila");
       const d = await r.json();
@@ -171,14 +229,8 @@
         )
         .join("");
     } catch (e) {
-      box.textContent = "não consegui carregar a fila";
+      /* silencioso */
     }
-  }
-
-  function esc(texto) {
-    return String(texto == null ? "" : texto).replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-    })[c]);
   }
 
   async function agirNaFila(id, acao, botao) {
@@ -186,13 +238,11 @@
     botao.disabled = true;
     botao.innerHTML = '<span class="spin"></span>';
     try {
-      const r = await api(`/api/fila/${encodeURIComponent(id)}/${encodeURIComponent(acao)}`, { method: "POST" });
+      const r = await api(`/api/fila/${encodeURIComponent(id)}/${encodeURIComponent(acao)}`, {
+        method: "POST",
+      });
       const d = await r.json();
-      if (d.ok === false) {
-        toast(d.erro || "não deu certo");
-      } else {
-        toast(acao === "publicar" ? "✅ Publicada no canal." : "⏭️ Item pulado.");
-      }
+      toast(d.ok === false ? d.erro || "não deu certo" : acao === "publicar" ? "✅ Publicada no canal." : "⏭️ Item pulado.");
     } catch (e) {
       toast("Falha ao agir na fila.");
     } finally {
@@ -205,6 +255,7 @@
 
   async function publicarTodas() {
     const b = $("btnTodas");
+    if (!b) return;
     const html = b.innerHTML;
     b.disabled = true;
     b.innerHTML = '<span class="spin"></span> Publicando…';
@@ -222,21 +273,63 @@
     }
   }
 
-  $("filaItens").addEventListener("click", (ev) => {
-    const botao = ev.target.closest("button[data-acao]");
-    if (!botao) return;
-    const item = botao.closest(".item");
-    if (!item) return;
-    agirNaFila(item.dataset.id, botao.dataset.acao, botao);
+  async function disparar(rota, rotulo) {
+    const b = rota === "/api/buscar" ? $("btnBuscar") : $("btnMaisLidas");
+    if (!b) return;
+    const html = b.innerHTML;
+    b.disabled = true;
+    b.innerHTML = '<span class="spin"></span> Buscando…';
+    try {
+      await api(rota, { method: "POST" });
+      toast(`${rotulo}: varredura iniciada. A aprovação chega no seu WhatsApp.`);
+    } catch (e) {
+      toast("Falha ao disparar a varredura.");
+    } finally {
+      setTimeout(() => {
+        b.disabled = false;
+        b.innerHTML = html;
+        carregarStatus();
+        carregarFila();
+      }, 2500);
+    }
+  }
+
+  // ------------------------------------------------------------- eventos ---
+  ligar("btnBuscar", "click", () => disparar("/api/buscar", "Busca"));
+  ligar("btnMaisLidas", "click", () => disparar("/api/mais-lidas", "Mais lidas"));
+  ligar("btnModelos", "click", carregarModelos);
+  ligar("btnQR", "click", carregarQR);
+  ligar("btnTodas", "click", publicarTodas);
+
+  ligar("btnSenha", "click", () => {
+    const campo = $("inputSenha");
+    const valor = campo ? campo.value.trim() : "";
+    if (!valor) {
+      toast("Digite a senha.");
+      return;
+    }
+    guardarToken(valor);
   });
 
-  $("btnTodas").addEventListener("click", publicarTodas);
+  ligar("inputSenha", "keydown", (ev) => {
+    if (ev.key === "Enter") {
+      const b = $("btnSenha");
+      if (b) b.click();
+    }
+  });
 
-  $("btnBuscar").addEventListener("click", () => disparar("/api/buscar", "Busca"));
-  $("btnMaisLidas").addEventListener("click", () => disparar("/api/mais-lidas", "Mais lidas"));
-  $("btnModelos").addEventListener("click", carregarModelos);
-  $("btnQR").addEventListener("click", carregarQR);
+  const lista = $("filaItens");
+  if (lista) {
+    lista.addEventListener("click", (ev) => {
+      const botao = ev.target.closest("button[data-acao]");
+      if (!botao) return;
+      const item = botao.closest(".item");
+      if (!item) return;
+      agirNaFila(item.dataset.id, botao.dataset.acao, botao);
+    });
+  }
 
+  // -------------------------------------------------------------- início ---
   carregarStatus();
   carregarModelos();
   carregarUltimas();
@@ -244,8 +337,6 @@
   carregarQR();
   carregarFila();
   setInterval(carregarStatus, 15000);
-  // o QR Code gira sozinho: a cada 10s enquanto não estiver conectado
   setInterval(carregarQR, 10000);
-  // a fila de aprovação também se atualiza sozinha
   setInterval(carregarFila, 10000);
 })();

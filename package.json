@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "canais": "node scripts/listar_canais.js",
-    "resolver": "node scripts/listar_canais.js resolver"
+    "resolver": "node scripts/listar_canais.js resolver",
+    "verificar": "node scripts/verificar.js",
+    "teste": "node scripts/verificar.js"
   },
   "keywords": [],
   "author": "",

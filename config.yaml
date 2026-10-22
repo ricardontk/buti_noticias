@@ -1,5 +1,5 @@
 name: "Bot de Notícias - Drones de Pulverização"
-version: "1.3.2"
+version: "1.4.0"
 slug: "bot_noticias"
 description: "Coleta notícias de drones de pulverização (Brasil e mundo), traduz e reescreve no tom do canal, e publica no canal do WhatsApp depois da sua aprovação."
 startup: application
@@ -8,7 +8,17 @@ init: false
 arch:
   - aarch64
 
-# O painel do bot aparece dentro do Home Assistant (sem digitar IP nenhum).
+# ---------------------------------------------------------------------------
+# PORTAS — o número é um só: 8090. Ele aparece em três lugares porque cada um
+# é lido por uma parte diferente do Supervisor:
+#   ports:         publica a porta no host  -> http://IP_DO_RASPBERRY:8090
+#   ingress_port:  porta que o HA usa para abrir o painel dentro dele
+#   painel.porta:  (no config.json do volume) a porta que o bot escuta
+# Se você mudar painel.porta no config.json, o bot escuta nas duas portas e o
+# painel continua acessível nos dois lugares.
+# ---------------------------------------------------------------------------
+ports:
+  8090/tcp: 8090
 ingress: true
 ingress_port: 8090
 panel_icon: mdi:newspaper-variant
@@ -20,7 +30,6 @@ options:
   canais: ""
   modo_publicacao: "reserva"
   meu_numero: ""
-  painel_porta: "8090"
   llm_provedor: "groq"
   groq_api_key: ""
   groq_modelo: "qwen/qwen3.8-27b"
@@ -35,7 +44,6 @@ schema:
   canais: str?
   modo_publicacao: "list(reserva|todos)"
   meu_numero: str?
-  painel_porta: port?
   llm_provedor: "list(groq|ha_assist|ollama|heuristica)"
   groq_api_key: str?
   groq_modelo: str?
@@ -45,10 +53,10 @@ schema:
   notificar_ha: bool?
   dispositivo_notificacao: str?
   publicar_estado_ha: bool?
-ports:
-  8090/tcp: 8090
+
 map:
   - share:rw
+
 # Dá acesso à API do Home Assistant (http://supervisor/core/api) e injeta a
 # variável SUPERVISOR_TOKEN no container.
 #   homeassistant_api -> libera o proxy /core/api do Supervisor

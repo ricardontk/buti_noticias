@@ -64,6 +64,18 @@
     <div class="sub">Notícias do agro — Brasil &amp; mundo</div>
   </header>
 
+  <div class="card" id="cardSenha" style="display:none">
+    <h2>Senha do painel</h2>
+    <p class="mut" style="font-size:13px;margin:0 0 10px">
+      Este painel tem senha. Digite a senha configurada em
+      <b>Ajustes → Aplicativos → Bot de Notícias → Configuração → painel_token</b>.
+      Ela fica guardada só neste navegador.
+    </p>
+    <input id="inputSenha" type="password" placeholder="senha do painel"
+           style="width:100%;padding:13px;border-radius:10px;border:1px solid #2a3438;background:#141a1d;color:#e9edee;font-size:15px" />
+    <button class="btn" id="btnSenha" style="margin-top:10px">🔓 Entrar</button>
+  </div>
+
   <div class="card" id="cardQR" style="display:none">
     <h2>Conectar o WhatsApp</h2>
     <div id="qrBox" class="mut">Gerando o código…</div>
@@ -114,6 +126,16 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="/painel.js"></script>
+  <script>
+    // Carrega o painel.js com o prefixo correto: dentro do Home Assistant a
+    // página vem de /api/hassio_ingress/<token>, e um caminho absoluto
+    // (/painel.js) escapingaria o ingress e o script nem carregaria.
+    (function () {
+      var m = location.pathname.match(/^(.*\/api\/hassio_ingress\/[^/]+)/);
+      var s = document.createElement("script");
+      s.src = (m ? m[1] : "") + "/painel.js";
+      document.head.appendChild(s);
+    })();
+  </script>
 </body>
 </html>
