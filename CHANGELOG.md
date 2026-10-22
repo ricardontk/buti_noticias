@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.3.1
+
+### Corrigido
+
+- `modo_publicacao` tinha o **schema** (`list(reserva|todos)`) no lugar do
+  **valor padrão** nas opções do app. O Supervisor recusava a instalação com
+  "value must be one of ['reserva', 'todos']". O valor padrão agora é `reserva`.
+- `scripts/validar-addon.py` agora confere o **valor** de cada opção contra o
+  schema (o mesmo check que o Supervisor faz) — esse bug passa a ser pego antes
+  de publicar.
+
 ## 1.3.0
 
 ### Adicionado
