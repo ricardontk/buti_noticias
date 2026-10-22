@@ -141,10 +141,25 @@ class LLM {
         this.http = axios.create({ timeout: this.cfg.timeout_ms || 60000 });
         this.degradado = false; // vira true se o LLM falhar
         this.ultimoErro = ""; // última mensagem de erro (para mostrar no painel)
+        this.cooldownMs = this.cfg.cooldown_ms ?? 60000; // 1 min entre tentativas
+        this.tentativaEm = 0; // quando pode tentar a IA de novo
     }
 
     get disponivel() {
-        return this.cfg.provedor !== "heuristica" && !this.degradado;
+        if (this.cfg.provedor === "heuristica") return false;
+        if (!this.degradado) return true;
+        // depois do cooldown, tenta a IA de novo (erro de cota é temporário)
+        if (Date.now() >= this.tentativaEm) {
+            this.degradado = false;
+            return true;
+        }
+        return false;
+    }
+
+    /** Segundos que faltam para a próxima tentativa da IA. */
+    get esperaSegundos() {
+        if (!this.degradado) return 0;
+        return Math.max(0, Math.ceil((this.tentativaEm - Date.now()) / 1000));
     }
 
     /**
@@ -305,6 +320,11 @@ class LLM {
             this.ultimoErro = mensagem;
             if (this.cfg.fallback_heuristico !== false) {
                 this.degradado = true;
+                this.tentativaEm = Date.now() + this.cooldownMs;
+                console.log(
+                    `🔁 Nova tentativa da IA em ${Math.round(this.cooldownMs / 1000)}s ` +
+                        `(evita estourar o limite de tokens por minuto).`
+                );
                 return candidatos.map((c) => ({ ...c, ...traduzirHeuristica(c) }));
             }
             throw err;

@@ -380,6 +380,7 @@ const api = new Api({
                 modelo: llm.modeloAtivo,
                 degradado: llm.degradado,
                 erro: llm.ultimoErro || "",
+                espera_s: llm.esperaSegundos,
             },
             whatsapp: { conectado: wa.conectado },
             ultima_varredura: state.data.lastScan,

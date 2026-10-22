@@ -2,6 +2,22 @@
 
 Todas as mudanças relevantes deste app.
 
+## 1.6.0
+
+### Corrigido
+
+- **O link publicado continuava sendo do Google News** (`news.google.com/rss/articles/...`).
+  O Google mudou o formato: a página do artigo não tem mais o atributo `data-n-au`
+  (o método antigo) — agora ela devolve uma assinatura (`data-n-a-sg`) e um
+  carimbo (`data-n-a-ts`), que são usados na API `batchexecute` do Google para
+  devolver a URL do veículo. O bot agora usa essa API: **3 links resolvidos em
+  ~2,5 s, sem abrir navegador**. Ordem: redirect → atributo antigo → API do
+  Google → navegador (último recurso).
+- **A IA ficava "degradada" para sempre** depois de um erro (cota por minuto,
+  modelo inexistente): o bot nunca mais tentava. Agora há **cooldown de 1 minuto**
+  (`llm.cooldown_ms`): durante a espera ele usa o texto original, e depois
+  tenta a IA de novo. O painel mostra quanto falta para a próxima tentativa.
+
 ## 1.5.2
 
 ### Corrigido

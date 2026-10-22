@@ -82,6 +82,7 @@ const testes = [
     ["scripts/teste-artigo.js", "texto das matérias (sem navegador)"],
     ["scripts/teste-link.js", "link publicado (nunca quebrado)"],
     ["scripts/teste-whatsapp.js", "recuperação da sessão do WhatsApp"],
+    ["scripts/teste-ia-cooldown.js", "cooldown da IA (cota por minuto)"],
 ];
 for (const [arquivo, nome] of testes) {
     titulo(`3. Teste: ${nome}`);

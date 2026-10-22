@@ -55,6 +55,8 @@ const DEFAULTS = {
         // Teto de texto da matéria enviado para a IA (protege o free tier)
         max_chars_texto: 900, // por matéria
         max_chars_total: 9000, // no total de um scan (~2,5 mil tokens)
+        // Espera antes de tentar a IA de novo depois de uma falha (cota por minuto)
+        cooldown_ms: 60000,
     },
     publicacao: {
         incluir_imagem: true,

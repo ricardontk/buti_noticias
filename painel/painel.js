@@ -96,7 +96,8 @@
         const modelo = s.ia.modelo || "?";
         if (s.ia.degradado) {
           const motivo = s.ia.erro ? ` — ${s.ia.erro}` : "";
-          set("stIA", `🔴 ${s.ia.provedor} (sem IA${motivo})`);
+          const espera = s.ia.espera_s ? ` (tenta em ${s.ia.espera_s}s)` : "";
+          set("stIA", `🔴 ${s.ia.provedor} (sem IA${motivo})${espera}`);
         } else {
           set("stIA", `🟢 ${s.ia.provedor} / ${modelo}`);
         }
