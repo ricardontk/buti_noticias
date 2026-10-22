@@ -5,6 +5,12 @@
  *   - canal   (newsletter): 120363...@newsletter
  *   - grupo   (fallback):   123-456@g.us
  *
+ * Pode haver mais de um canal:
+ *   - `cfg.canais`  lista de canais (separados por vírgula)
+ *   - `cfg.modo_publicacao`:
+ *       "reserva" -> publica no primeiro canal que funcionar (o resto é reserva)
+ *       "todos"   -> publica em todos os canais da lista
+ *
  * Observação importante: NÃO usamos window.WWebJS.getChannelMetadata() — essa função do
  * wwebjs está quebrada nas versões atuais do WhatsApp Web (getRoleByIdentifier removido).
  * Para consultar metadados use o job direto (ver scripts/listar_canais.js).
@@ -27,6 +33,31 @@ class Publisher {
         return this.cfg.canal_id;
     }
 
+    /**
+     * Todos os destinos de canal, em ordem de preferência.
+     * Aceita `canais` como lista ou como texto separado por vírgula.
+     */
+    get destinos() {
+        const lista = [];
+        const bruto = this.cfg.canais;
+        const partes = Array.isArray(bruto)
+            ? bruto
+            : String(bruto || "")
+                  .split(",")
+                  .map((s) => s.trim());
+        for (const item of partes) {
+            if (item && !lista.includes(item)) lista.push(item);
+        }
+        if (this.cfg.canal_id && !lista.includes(this.cfg.canal_id)) {
+            lista.unshift(this.cfg.canal_id);
+        }
+        return lista;
+    }
+
+    get modoPublicacao() {
+        return this.cfg.modo_publicacao === "todos" ? "todos" : "reserva";
+    }
+
     /** Baixa a imagem da matéria (opcional) para reenviar junto da mensagem. */
     async _baixarImagem(url) {
         if (!url) return null;
@@ -47,11 +78,15 @@ class Publisher {
 
     /**
      * Publica um item aprovado.
-     * @returns {Promise<{ok:boolean, erro?:string}>}
+     * Modos (cfg.modo_publicacao):
+     *   "reserva" -> publica no primeiro canal que funcionar (os outros ficam de reserva)
+     *   "todos"   -> publica em todos os canais da lista
+     * @returns {Promise<{ok:boolean, erro?:string, destinos?:string[]}>}
      */
     async publicar(item, texto) {
-        const destino = this.destino;
-        if (!destino) return { ok: false, erro: "nenhum destino configurado (canal_id)" };
+        const modo = this.modoPublicacao;
+        const alvos = this.destinos;
+        if (!alvos.length) return { ok: false, erro: "nenhum destino configurado (canal_id)" };
 
         const opcoes = {};
         if (this.cfg.publicacao?.incluir_imagem && item.imagem) {
@@ -59,13 +94,38 @@ class Publisher {
             if (media) opcoes.media = media;
         }
 
+        const publicados = [];
+        const falhas = [];
+
+        for (const destino of alvos) {
+            const r = await this._enviarPara(destino, texto, opcoes);
+            if (r.ok) {
+                publicados.push(destino);
+                if (modo === "reserva") break; // já publicou, os outros ficam de reserva
+            } else {
+                falhas.push(`${destino}: ${r.erro}`);
+            }
+        }
+
+        if (publicados.length) {
+            console.log(
+                `📢 Publicado em ${publicados.length} destino(s): ${publicados.join(", ")}` +
+                    (falhas.length ? ` — falhou: ${falhas.join(" | ")}` : "")
+            );
+            return { ok: true, destinos: publicados };
+        }
+        console.error("❌ Falha ao publicar em todos os destinos:", falhas.join(" | "));
+        return { ok: false, erro: falhas.join(" | ") || "falha desconhecida" };
+    }
+
+    /** Envia a mensagem para um destino (canal ou grupo). */
+    async _enviarPara(destino, texto, opcoes) {
         try {
             // Caminho 1: chat do canal (o método oficial para newsletters)
             try {
                 const chat = await this.client.getChatById(destino);
                 if (chat && typeof chat.sendMessage === "function") {
                     await chat.sendMessage(texto, opcoes);
-                    console.log(`📢 Publicado no destino ${destino}`);
                     return { ok: true };
                 }
             } catch (err) {
@@ -78,10 +138,8 @@ class Publisher {
             } else {
                 await this.client.sendMessage(destino, texto);
             }
-            console.log(`📢 Publicado no destino ${destino}`);
             return { ok: true };
         } catch (err) {
-            console.error(`❌ Falha ao publicar:`, err.message);
             return { ok: false, erro: err.message };
         }
     }

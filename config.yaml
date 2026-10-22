@@ -1,5 +1,5 @@
 name: "Bot de Notícias - Drones de Pulverização"
-version: "1.1.0"
+version: "1.2.0"
 slug: "bot_noticias"
 description: "Coleta notícias de drones de pulverização (Brasil e mundo), traduz e reescreve no tom do canal, e publica no canal do WhatsApp depois da sua aprovação."
 startup: application
@@ -17,7 +17,10 @@ panel_admin: true
 
 options:
   canal_id: ""
+  canais: ""
+  modo_publicacao: "list(reserva|todos)"
   meu_numero: ""
+  painel_porta: "8090"
   llm_provedor: "groq"
   groq_api_key: ""
   groq_modelo: "qwen/qwen3.8-27b"
@@ -29,7 +32,10 @@ options:
   publicar_estado_ha: "true"
 schema:
   canal_id: str?
+  canais: str?
+  modo_publicacao: "list(reserva|todos)"
   meu_numero: str?
+  painel_porta: port?
   llm_provedor: "list(groq|ha_assist|ollama|heuristica)"
   groq_api_key: str?
   groq_modelo: str?

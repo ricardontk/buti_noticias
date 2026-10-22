@@ -23,7 +23,12 @@ export FONTES_PATH=/share/bot_noticias/sources.json
 export ESTADO_PATH=/share/bot_noticias/state.json
 export AUTH_PATH=/share/bot_noticias/.wwebjs_auth
 export CHROMIUM_PATH=/usr/bin/chromium-browser
+
+# A porta do painel vem da opção do app (padrão 8090). O ingress do Home
+# Assistant usa a porta 8090 (definida em ingress_port no config.yaml do app),
+# então o app escuta nas duas quando elas são diferentes.
 export PORT=8090
+export INGRESS_PORT=8090
 
 # --- Opções do add-on (config.yaml) -> variáveis de ambiente ------------------
 # Tudo que estiver vazio nas opções continua vindo do config.json do volume.
@@ -44,7 +49,10 @@ aplica() {
 }
 
 aplica CANAL_ID canal_id
+aplica CANAIS canais
+aplica MODO_PUBLICACAO modo_publicacao
 aplica MEU_NUMERO meu_numero
+aplica PORT painel_porta
 aplica LLM_PROVEDOR llm_provedor
 aplica GROQ_API_KEY groq_api_key
 aplica GROQ_MODELO groq_modelo

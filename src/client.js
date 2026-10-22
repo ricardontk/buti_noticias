@@ -22,6 +22,8 @@ class WhatsAppClient {
         this.cfg = cfg;
         this.lidCache = {};
         this.lidCacheFile = path.join(path.dirname(cfg.caminhos.estado), "lid_cache.json");
+        this.qrAtual = null; // último QR Code recebido (para mostrar no painel web)
+        this.conectado = false;
         this._carregarLidCache();
 
         const puppeteerConfig = {
@@ -98,7 +100,10 @@ class WhatsAppClient {
         const c = this.client;
 
         c.on("qr", (qr) => {
-            console.log("\n📱 Escaneie o QR Code com o WhatsApp do celular:\n");
+            this.qrAtual = qr;
+            this.conectado = false;
+            console.log("\n📱 Escaneie o QR Code com o WhatsApp do celular:");
+            console.log("   (também disponível no painel web do bot)");
             qrcode.generate(qr, { small: true });
             const destino = path.join(path.dirname(this.cfg.caminhos.estado), "qrcode.png");
             QRCodeImage.toFile(destino, qr, { margin: 2, width: 500 }, (err) => {
@@ -106,12 +111,20 @@ class WhatsAppClient {
             });
         });
 
-        c.on("authenticated", () => console.log("🔑 [SESSÃO] Autenticado. Sincronizando..."));
+        c.on("authenticated", () => {
+            this.qrAtual = null;
+            console.log("🔑 [SESSÃO] Autenticado. Sincronizando...");
+        });
         c.on("change_state", (s) => console.log(`🔄 [ESTADO] ${s}`));
-        c.on("disconnected", (r) => console.warn(`🔌 [DESCONECTADO] ${r}`));
+        c.on("disconnected", (r) => {
+            this.conectado = false;
+            console.warn(`🔌 [DESCONECTADO] ${r}`);
+        });
         c.on("auth_failure", (m) => console.error("❌ [FALHA SESSÃO]", m));
 
         c.on("ready", async () => {
+            this.conectado = true;
+            this.qrAtual = null;
             console.log("✅ [PRONTO] Conectado ao WhatsApp.");
             const destino = path.join(path.dirname(this.cfg.caminhos.estado), "qrcode.png");
             if (fs.existsSync(destino)) {
@@ -143,6 +156,17 @@ class WhatsAppClient {
                 console.error("⚠️ erro no handler de mensagem:", err);
             }
         });
+    }
+
+    /** QR Code atual em PNG (data URL) para mostrar no painel web; null se já conectado. */
+    async qrDataUrl() {
+        if (!this.qrAtual) return null;
+        try {
+            return await QRCodeImage.toDataURL(this.qrAtual, { margin: 1, width: 360 });
+        } catch (err) {
+            console.error("⚠️ não consegui gerar a imagem do QR:", err.message);
+            return null;
+        }
     }
 
     /** Inicia com retry e backoff (não derruba o processo). */

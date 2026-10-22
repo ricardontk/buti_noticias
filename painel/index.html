@@ -42,6 +42,7 @@
            border: 1px solid var(--borda); padding: 12px 18px; border-radius: 12px; font-size: 14px;
            opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 90%; }
   .toast.on { opacity: 1; }
+  #qrBox img { width: 100%; max-width: 320px; background: #fff; border-radius: 10px; padding: 10px; }
   .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff55; border-top-color: #fff;
           border-radius: 50%; animation: s .8s linear infinite; vertical-align: -2px; }
   @keyframes s { to { transform: rotate(360deg); } }
@@ -53,6 +54,16 @@
     <div class="sub">Notícias do agro — Brasil &amp; mundo</div>
   </header>
 
+  <div class="card" id="cardQR" style="display:none">
+    <h2>Conectar o WhatsApp</h2>
+    <div id="qrBox" class="mut">Gerando o código…</div>
+    <p class="mut" style="font-size:13px;margin:10px 0 0">
+      No celular: WhatsApp → <b>Aparelhos conectados</b> → <b>Conectar com número de telefone</b> →
+      <b>Conectar usando este código</b>. A imagem se atualiza sozinha.
+    </p>
+    <button class="btn sec" id="btnQR" style="margin-top:10px">🔄 Atualizar código</button>
+  </div>
+
   <div class="card">
     <button class="btn" id="btnBuscar">🔍 Buscar notícias agora</button>
     <button class="btn sec" id="btnMaisLidas">📈 Ver as mais lidas do dia</button>
@@ -61,7 +72,9 @@
   <div class="card">
     <h2>Status</h2>
     <div class="row"><span class="mut">Bot</span><b id="stPronto">—</b></div>
+    <div class="row"><span class="mut">WhatsApp</span><b id="stWhats">—</b></div>
     <div class="row"><span class="mut">IA</span><b id="stIA">—</b></div>
+    <div class="row"><span class="mut">Canais</span><b id="stCanais">—</b></div>
     <div class="row"><span class="mut">Última varredura</span><b id="stVarredura">—</b></div>
     <div class="row"><span class="mut">Última publicação</span><b id="stPublicacao">—</b></div>
     <div class="row"><span class="mut">Aguardando você</span><b id="stFila">—</b></div>

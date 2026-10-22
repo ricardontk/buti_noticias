@@ -13,14 +13,26 @@ Esta é a dúvida mais comum, então fica explícito:
 |---|---|---|
 | Card de aprovação ("1 publicar, 2 pular…") | **Seu WhatsApp particular** | opção `meu_numero` |
 | Avisos ("varredura concluída", erros, resumo do dia) | **Seu WhatsApp particular** | opção `meu_numero` |
-| Notícia aprovada (texto + imagem) | **Canal de newsletter** | opção `canal_id` |
-| Notícia aprovada (quando o canal não existe) | Grupo alternativo | `canais_alternativos` no `config.json` |
+| Notícia aprovada (texto + imagem) | **Canal de newsletter** | opções `canal_id` e `canais` |
+| Notícia aprovada (quando o canal não existe) | Grupo alternativo | `destino_grupo` no `config.json` |
 
 Ou seja: **os avisos vão para o seu WhatsApp particular**; só o conteúdo publicado
 vai para o canal. O bot nunca manda mensagem de controle para o canal.
 
 O número do app (`meu_numero`) é também quem pode conversar com ele: qualquer
 outro número é ignorado.
+
+### Mais de um canal
+
+Você pode publicar em **vários canais** ao mesmo tempo. Duas formas:
+
+| Opção | O que faz |
+|---|---|
+| `canais` | lista de canais separados por vírgula, ex.: `120363...@newsletter,120363...@newsletter` |
+| `modo_publicacao` | `reserva` (padrão) = publica no **primeiro que funcionar**, os outros ficam de reserva · `todos` = publica **em todos** |
+
+O `canal_id` é sempre o primeiro da fila. Se você preencher só o `canal_id`, o
+comportamento é o de sempre (um canal só).
 
 ---
 
@@ -44,6 +56,16 @@ outro número é ignorado.
 > O login fica salvo no volume `/share/bot_noticias/.wwebjs_auth` — você não
 > precisa escanear de novo a cada reinício.
 
+### Conectar pelo painel web (sem olhar o log)
+
+Se preferir, abra o painel do bot (o botão **Abrir interface web** do app) e o
+**cartão "Conectar o WhatsApp"** aparece lá em cima, com o QR Code pronto para
+escanear. O código se atualiza sozinho a cada 10 segundos e o cartão some
+assim que o bot conectar.
+
+No celular: WhatsApp → **Aparelhos conectados** → **Conectar com número de
+telefone** → **Conectar usando este código**.
+
 ---
 
 ## 3. Opções do app
@@ -53,7 +75,10 @@ Todas em **Ajustes → Aplicativos → Bot de Notícias → Configuração**.
 | Opção | Padrão | Para que serve |
 |---|---|---|
 | `canal_id` | vazio | ID do canal onde as notícias aprovadas são publicadas (`120363...@newsletter`) |
+| `canais` | vazio | Lista de canais separados por vírgula (para publicar em mais de um) |
+| `modo_publicacao` | `reserva` | `reserva` = primeiro que funcionar · `todos` = publica em todos |
 | `meu_numero` | vazio | **Seu** WhatsApp: chegam os cards de aprovação e os avisos |
+| `painel_porta` | `8090` | Porta do painel web. O ingress do HA continua na 8090 — se mudar, o app escuta nas duas |
 | `llm_provedor` | `groq` | `groq` (nuvem), `ha_assist` (Assist/Ollama do HA), `ollama`, `heuristica` |
 | `groq_api_key` | vazio | Chave da Groq (só usada com `llm_provedor` = `groq`) |
 | `groq_modelo` | `qwen/qwen3.8-27b` | Modelo de texto da Groq |

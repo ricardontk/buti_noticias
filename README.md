@@ -15,6 +15,8 @@ aprova vai para o canal.
 - 🤖 Reescreve o texto em português com o tom do canal (Groq, Assist do HA ou Ollama)
 - ✅ **Nada é publicado sem você aprovar** — o card chega no seu WhatsApp pessoal
 - 📱 Painel web integrado ao Home Assistant (o botão fica dentro do HA)
+- 📲 QR Code do WhatsApp direto no painel web (para conectar sem olhar o log)
+- 🔢 Publica em **um ou mais canais**, com opção de reserva
 - 🔔 Avisa no celular quando chega notícia nova
 - ⏰ Resumo automático diário no horário que você escolher
 

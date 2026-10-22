@@ -4,6 +4,7 @@
  * Rotas:
  *   GET  /                 painel
  *   GET  /api/status       estado do bot
+ *   GET  /api/qr           QR Code do WhatsApp (para conectar) e estado da sessão
  *   GET  /api/fontes       fontes e último resultado
  *   GET  /api/ultimas      últimas publicações
  *   GET  /api/modelos      modelos de texto disponíveis no provedor de IA
@@ -34,8 +35,12 @@ const TIPOS = {
 class Api {
     constructor({ cfg, acoes }) {
         this.cfg = cfg;
-        this.acoes = acoes; // { status, fontes, ultimas, modelos, trocarModelo, buscar, maisLidas }
-        this.server = http.createServer((req, res) => this._tratar(req, res));
+        this.acoes = acoes; // { status, fontes, ultimas, modelos, trocarModelo, buscar, maisLidas, qr }
+        this.handler = (req, res) => this._tratar(req, res);
+    }
+
+    _criarServidor() {
+        return http.createServer(this.handler);
     }
 
     _autorizado(req, pathname, query) {
@@ -95,6 +100,9 @@ class Api {
             if (pathname === "/api/status") {
                 return this._json(res, await this.acoes.status());
             }
+            if (pathname === "/api/qr") {
+                return this._json(res, await this.acoes.qr());
+            }
             if (pathname === "/api/fontes") {
                 return this._json(res, await this.acoes.fontes());
             }
@@ -143,9 +151,28 @@ class Api {
 
     iniciar() {
         const porta = this.cfg.painel?.porta || 8090;
-        this.server.listen(porta, "0.0.0.0", () => {
+        const ingress = this.cfg.painel?.porta_ingress || 8090;
+
+        const principal = this._criarServidor();
+        principal.on("error", (err) => console.error("❌ erro no servidor do painel:", err.message));
+        principal.listen(porta, "0.0.0.0", () => {
             console.log(`🌐 Painel disponível em http://<IP-DO-HA>:${porta}`);
         });
+
+        // O ingress do Home Assistant aponta para uma porta fixa (ingress_port
+        // no config.yaml do app). Se a porta do painel for outra, escutamos
+        // também na porta do ingress para o painel continuar acessível.
+        if (ingress && ingress !== porta) {
+            const extra = this._criarServidor();
+            extra.on("error", (err) => {
+                console.warn(
+                    `⚠️ não consegui abrir a porta ${ingress} (${err.message}) — o ingress do HA pode não funcionar.`
+                );
+            });
+            extra.listen(ingress, "0.0.0.0", () => {
+                console.log(`🌐 Ingress do Home Assistant na porta ${ingress}`);
+            });
+        }
     }
 }
 

@@ -26,14 +26,35 @@
       const r = await api("/api/status");
       const s = await r.json();
       $("stPronto").textContent = s.pronto ? "🟢 pronto" : "🟡 iniciando";
+      $("stWhats").textContent = s.whatsapp?.conectado ? "🟢 conectado" : "🟡 aguardando QR";
       $("stIA").textContent = s.ia ? `${s.ia.provedor} / ${s.ia.modelo}` : "—";
       if (s.ia && s.ia.degradado) $("stIA").textContent += " (degradado)";
+      const canais = s.canais || (s.canal_id ? [s.canal_id] : []);
+      $("stCanais").textContent = canais.length ? `${canais.length} · ${canais[0]}` : "—";
+      if (s.modo_publicacao) $("stCanais").title = `modo: ${s.modo_publicacao}`;
       $("stVarredura").textContent = dt(s.ultima_varredura);
       $("stPublicacao").textContent = dt(s.ultima_publicacao);
       $("stFila").textContent = s.fila || 0;
       $("stStats").textContent = `${s.stats?.publicadas || 0} / ${s.stats?.puladas || 0}`;
     } catch (e) {
       $("stPronto").textContent = "🔴 sem conexão";
+    }
+  }
+
+  async function carregarQR() {
+    const card = $("cardQR");
+    const box = $("qrBox");
+    try {
+      const r = await api("/api/qr");
+      const d = await r.json();
+      if (d.conectado || !d.qr) {
+        card.style.display = "none";
+        return;
+      }
+      card.style.display = "block";
+      box.innerHTML = `<img src="${d.qr}" alt="QR Code do WhatsApp" />`;
+    } catch (e) {
+      box.textContent = "não consegui carregar o código";
     }
   }
 
@@ -123,10 +144,14 @@
   $("btnBuscar").addEventListener("click", () => disparar("/api/buscar", "Busca"));
   $("btnMaisLidas").addEventListener("click", () => disparar("/api/mais-lidas", "Mais lidas"));
   $("btnModelos").addEventListener("click", carregarModelos);
+  $("btnQR").addEventListener("click", carregarQR);
 
   carregarStatus();
   carregarModelos();
   carregarUltimas();
   carregarFontes();
+  carregarQR();
   setInterval(carregarStatus, 15000);
+  // o QR Code gira sozinho: a cada 10s enquanto não estiver conectado
+  setInterval(carregarQR, 10000);
 })();

@@ -13,6 +13,8 @@ const ROOT = path.join(__dirname, "..");
 
 const DEFAULTS = {
     canal_id: "",
+    canais: [], // lista de canais (JID) — além do canal_id
+    modo_publicacao: "reserva", // "reserva" (primeiro que funcionar) | "todos"
     canais_alternativos: {},
     meu_numero: "",
     admin_phone: "",
@@ -51,6 +53,7 @@ const DEFAULTS = {
     },
     painel: {
         porta: 8090,
+        porta_ingress: 8090, // porta usada pelo ingress do Home Assistant
         token: "",
     },
     // Ponte com o Home Assistant (o add-on já vem com `homeassistant: true`,
@@ -101,6 +104,13 @@ function load() {
 
     // Sobrescritas por ambiente (úteis no add-on, sem precisar editar arquivo)
     if (process.env.CANAL_ID) cfg.canal_id = process.env.CANAL_ID;
+    if (process.env.CANAIS) {
+        cfg.canais = String(process.env.CANAIS)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+    }
+    if (process.env.MODO_PUBLICACAO) cfg.modo_publicacao = process.env.MODO_PUBLICACAO;
     if (process.env.MEU_NUMERO) cfg.meu_numero = process.env.MEU_NUMERO;
     if (process.env.ADM_PHONE) cfg.admin_phone = process.env.ADM_PHONE;
     if (process.env.HA_TOKEN) cfg.llm.ha_token = process.env.HA_TOKEN;
@@ -109,6 +119,7 @@ function load() {
     if (process.env.LLM_PROVEDOR) cfg.llm.provedor = process.env.LLM_PROVEDOR;
     if (process.env.LLM_MODELO) cfg.llm.ollama_modelo = process.env.LLM_MODELO;
     if (process.env.PORT) cfg.painel.porta = parseInt(process.env.PORT, 10);
+    if (process.env.INGRESS_PORT) cfg.painel.porta_ingress = parseInt(process.env.INGRESS_PORT, 10);
     if (process.env.PAINEL_TOKEN) cfg.painel.token = process.env.PAINEL_TOKEN;
     if (process.env.AUTH_PATH) cfg.caminhos.auth = process.env.AUTH_PATH;
     if (process.env.ESTADO_PATH) cfg.caminhos.estado = process.env.ESTADO_PATH;
